@@ -8,8 +8,8 @@ const { encrypt } = require('../utils/encryption');
 
 const router = express.Router();
 
-const FANVUE_AUTH_URL = 'https://auth.fanvue.com/oauth/authorize';
-const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth/token';
+const FANVUE_AUTH_URL = 'https://auth.fanvue.com/oauth2/auth';
+const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth2/token';
 const FANVUE_API_BASE = 'https://api.fanvue.com/v1';
 
 // In-memory PKCE store (use Redis in production)
@@ -45,7 +45,7 @@ router.get('/connect', authenticate, (req, res) => {
     client_id: process.env.FANVUE_CLIENT_ID,
     redirect_uri: process.env.FANVUE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'read:profile read:subscribers read:earnings read:messages write:messages',
+    scope: 'openid offline_access offline read:self read:chat read:creator',
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256'
