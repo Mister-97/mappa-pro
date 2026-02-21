@@ -45,7 +45,7 @@ router.get('/connect', authenticate, (req, res) => {
     client_id: process.env.FANVUE_CLIENT_ID,
     redirect_uri: process.env.FANVUE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid offline_access offline read:self read:chat read:creator',
+    scope: 'openid offline_access offline read:chat read:creator',
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256'
