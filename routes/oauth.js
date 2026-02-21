@@ -22,25 +22,23 @@ const pkceStore = new Map();
  */
 router.get('/connect', authenticate, (req, res) => {
   const { label } = req.query;
-  
-  // Generate PKCE
+
   const codeVerifier = crypto.randomBytes(32).toString('base64url');
   const codeChallenge = crypto
     .createHash('sha256')
     .update(codeVerifier)
     .digest('base64url');
-  
-  // State carries userId + label for callback
+
   const state = crypto.randomBytes(16).toString('hex');
-  
+
   pkceStore.set(state, {
     codeVerifier,
     userId: req.user.id,
     organizationId: req.user.organization_id,
     label: label || 'Unnamed Model',
-    expiresAt: Date.now() + 10 * 60 * 1000 // 10 min
+    expiresAt: Date.now() + 10 * 60 * 1000
   });
-  
+
   const params = new URLSearchParams({
     client_id: process.env.FANVUE_CLIENT_ID,
     redirect_uri: process.env.FANVUE_REDIRECT_URI,
@@ -50,7 +48,7 @@ router.get('/connect', authenticate, (req, res) => {
     code_challenge: codeChallenge,
     code_challenge_method: 'S256'
   });
-  
+
   res.json({ authUrl: `${FANVUE_AUTH_URL}?${params.toString()}` });
 });
 
@@ -61,38 +59,42 @@ router.get('/connect', authenticate, (req, res) => {
 router.get('/callback', async (req, res, next) => {
   try {
     const { code, state, error } = req.query;
-    
+
     if (error) {
       return res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=${error}`);
     }
-    
-    // Validate state & get PKCE data
+
     const pkceData = pkceStore.get(state);
     if (!pkceData || Date.now() > pkceData.expiresAt) {
       return res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=invalid_state`);
     }
     pkceStore.delete(state);
-    
-    // Exchange code for tokens
+
+    // Use Basic auth header (client_secret_basic) — required by Fanvue
+    const credentials = Buffer.from(
+      `${process.env.FANVUE_CLIENT_ID}:${process.env.FANVUE_CLIENT_SECRET}`
+    ).toString('base64');
+
     const tokenResponse = await axios.post(
-  FANVUE_TOKEN_URL,
-  `grant_type=authorization_code&client_id=${process.env.FANVUE_CLIENT_ID}&client_secret=${process.env.FANVUE_CLIENT_SECRET}&code=${code}&redirect_uri=${encodeURIComponent(process.env.FANVUE_REDIRECT_URI)}&code_verifier=${pkceData.codeVerifier}`,
-  {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    }
-  }
-);
-    
+      FANVUE_TOKEN_URL,
+      `grant_type=authorization_code&client_id=${process.env.FANVUE_CLIENT_ID}&code=${code}&redirect_uri=${encodeURIComponent(process.env.FANVUE_REDIRECT_URI)}&code_verifier=${pkceData.codeVerifier}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${credentials}`
+        }
+      }
+    );
+
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
-    
+
     // Fetch creator profile from Fanvue
     const profileResponse = await axios.get(`${FANVUE_API_BASE}/creator/profile`, {
       headers: { Authorization: `Bearer ${access_token}` }
     });
-    
+
     const profile = profileResponse.data;
-    
+
     // Check if this Fanvue account is already connected
     const { data: existing } = await supabase
       .from('connected_accounts')
@@ -100,7 +102,7 @@ router.get('/callback', async (req, res, next) => {
       .eq('fanvue_user_id', profile.id)
       .eq('organization_id', pkceData.organizationId)
       .single();
-    
+
     const accountData = {
       organization_id: pkceData.organizationId,
       connected_by: pkceData.userId,
@@ -116,7 +118,7 @@ router.get('/callback', async (req, res, next) => {
       last_synced: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    
+
     if (existing) {
       await supabase
         .from('connected_accounts')
@@ -127,7 +129,7 @@ router.get('/callback', async (req, res, next) => {
         .from('connected_accounts')
         .insert({ id: uuidv4(), created_at: new Date().toISOString(), ...accountData });
     }
-    
+
     res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_success=true&account=${profile.username}`);
   } catch (err) {
     console.error('OAuth callback error:', err.message, err.response?.status, err.response?.data);
@@ -137,28 +139,27 @@ router.get('/callback', async (req, res, next) => {
 
 /**
  * DELETE /api/oauth/disconnect/:accountId
- * Remove a connected Fanvue account
  */
 router.delete('/disconnect/:accountId', authenticate, async (req, res, next) => {
   try {
     const { accountId } = req.params;
-    
+
     const { data: account, error } = await supabase
       .from('connected_accounts')
       .select('id, organization_id')
       .eq('id', accountId)
       .eq('organization_id', req.user.organization_id)
       .single();
-    
+
     if (error || !account) {
       return res.status(404).json({ error: 'Account not found' });
     }
-    
+
     await supabase
       .from('connected_accounts')
       .update({ is_active: false, access_token_enc: null, refresh_token_enc: null })
       .eq('id', accountId);
-    
+
     res.json({ message: 'Account disconnected successfully' });
   } catch (err) {
     next(err);
