@@ -133,7 +133,7 @@ router.get('/callback', async (req, res, next) => {
     // Trigger initial data sync
     res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_success=true&account=${profile.username}`);
   } catch (err) {
-    console.error('OAuth callback error:', err.message);
+    console.error('OAuth callback error:', err.message, err.response?.data);
     res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=token_exchange_failed`);
   }
 });
