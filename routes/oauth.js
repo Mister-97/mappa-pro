@@ -61,12 +61,12 @@ router.get('/callback', async (req, res, next) => {
     const { code, state, error } = req.query;
 
     if (error) {
-      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=${error}`);
+      return res.redirect(`${process.env.FRONTEND_URL}?oauth_error=${error}`);
     }
 
     const pkceData = pkceStore.get(state);
     if (!pkceData || Date.now() > pkceData.expiresAt) {
-      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=invalid_state`);
+      return res.redirect(`${process.env.FRONTEND_URL}?oauth_error=invalid_state`);
     }
     pkceStore.delete(state);
 
@@ -138,10 +138,10 @@ router.get('/callback', async (req, res, next) => {
         .insert({ id: uuidv4(), created_at: new Date().toISOString(), ...accountData });
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_success=true&account=${profile.handle}`);
+    res.redirect(`${process.env.FRONTEND_URL}?oauth_success=true&account=${profile.handle}`);
   } catch (err) {
     console.error('OAuth callback error:', err.message, err.response?.status, JSON.stringify(err.response?.data));
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=token_exchange_failed`);
+    res.redirect(`${process.env.FRONTEND_URL}?oauth_error=token_exchange_failed`);
   }
 });
 
