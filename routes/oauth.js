@@ -75,15 +75,14 @@ router.get('/callback', async (req, res, next) => {
     
     // Exchange code for tokens
     const tokenResponse = await axios.post(
-      FANVUE_TOKEN_URL,
-      `grant_type=authorization_code&client_id=${process.env.FANVUE_CLIENT_ID}&code=${code}&redirect_uri=${encodeURIComponent(process.env.FANVUE_REDIRECT_URI)}&code_verifier=${pkceData.codeVerifier}`,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${process.env.FANVUE_CLIENT_ID}:${process.env.FANVUE_CLIENT_SECRET}`).toString('base64')}`
-        }
-      }
-    );
+  FANVUE_TOKEN_URL,
+  `grant_type=authorization_code&client_id=${process.env.FANVUE_CLIENT_ID}&client_secret=${process.env.FANVUE_CLIENT_SECRET}&code=${code}&redirect_uri=${encodeURIComponent(process.env.FANVUE_REDIRECT_URI)}&code_verifier=${pkceData.codeVerifier}`,
+  {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  }
+);
     
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
     
