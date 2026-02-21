@@ -10,7 +10,7 @@ const router = express.Router();
 
 const FANVUE_AUTH_URL = 'https://auth.fanvue.com/oauth2/auth';
 const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth2/token';
-const FANVUE_API_BASE = 'https://api.fanvue.com/v1';
+const FANVUE_API_BASE = 'https://api.fanvue.com';
 
 // In-memory PKCE store (use Redis in production)
 const pkceStore = new Map();
@@ -43,7 +43,7 @@ router.get('/connect', authenticate, (req, res) => {
     client_id: process.env.FANVUE_CLIENT_ID,
     redirect_uri: process.env.FANVUE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid offline_access offline read:chat read:creator',
+    scope: 'openid offline_access offline read:self read:chat read:creator',
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256'
@@ -70,27 +70,30 @@ router.get('/callback', async (req, res, next) => {
     }
     pkceStore.delete(state);
 
-    // Use Basic auth header (client_secret_basic) — required by Fanvue
-    const credentials = Buffer.from(
-      `${process.env.FANVUE_CLIENT_ID}:${process.env.FANVUE_CLIENT_SECRET}`
-    ).toString('base64');
-
+    // Exchange code for tokens — Fanvue requires client_secret in form body
     const tokenResponse = await axios.post(
       FANVUE_TOKEN_URL,
-      `grant_type=authorization_code&client_id=${process.env.FANVUE_CLIENT_ID}&code=${code}&redirect_uri=${encodeURIComponent(process.env.FANVUE_REDIRECT_URI)}&code_verifier=${pkceData.codeVerifier}`,
+      new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: process.env.FANVUE_CLIENT_ID,
+        client_secret: process.env.FANVUE_CLIENT_SECRET,
+        redirect_uri: process.env.FANVUE_REDIRECT_URI,
+        code,
+        code_verifier: pkceData.codeVerifier
+      }).toString(),
       {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${credentials}`
-        }
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       }
     );
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    // Fetch creator profile from Fanvue
-    const profileResponse = await axios.get(`${FANVUE_API_BASE}/creator/profile`, {
-      headers: { Authorization: `Bearer ${access_token}` }
+    // Fetch creator profile — correct endpoint + API version header
+    const profileResponse = await axios.get(`${FANVUE_API_BASE}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        'X-Fanvue-API-Version': '2025-06-26'
+      }
     });
 
     const profile = profileResponse.data;
@@ -99,7 +102,7 @@ router.get('/callback', async (req, res, next) => {
     const { data: existing } = await supabase
       .from('connected_accounts')
       .select('id')
-      .eq('fanvue_user_id', profile.id)
+      .eq('fanvue_user_id', profile.uuid)
       .eq('organization_id', pkceData.organizationId)
       .single();
 
@@ -107,9 +110,9 @@ router.get('/callback', async (req, res, next) => {
       organization_id: pkceData.organizationId,
       connected_by: pkceData.userId,
       label: pkceData.label,
-      fanvue_user_id: profile.id,
-      fanvue_username: profile.username,
-      fanvue_display_name: profile.displayName || profile.username,
+      fanvue_user_id: profile.uuid,
+      fanvue_username: profile.handle,
+      fanvue_display_name: profile.displayName || profile.handle,
       avatar_url: profile.avatarUrl || null,
       access_token_enc: encrypt(access_token),
       refresh_token_enc: encrypt(refresh_token),
@@ -130,9 +133,9 @@ router.get('/callback', async (req, res, next) => {
         .insert({ id: uuidv4(), created_at: new Date().toISOString(), ...accountData });
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_success=true&account=${profile.username}`);
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_success=true&account=${profile.handle}`);
   } catch (err) {
-    console.error('OAuth callback error:', err.message, err.response?.status, err.response?.data);
+    console.error('OAuth callback error:', err.message, err.response?.status, JSON.stringify(err.response?.data));
     res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=token_exchange_failed`);
   }
 });
