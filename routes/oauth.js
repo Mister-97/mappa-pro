@@ -9,7 +9,7 @@ const { encrypt } = require('../utils/encryption');
 const router = express.Router();
 
 const FANVUE_AUTH_URL = 'https://auth.fanvue.com/oauth2/auth';
-const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth2/token';
+const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth/token';
 const FANVUE_API_BASE = 'https://api.fanvue.com/v1';
 
 // In-memory PKCE store (use Redis in production)
@@ -75,15 +75,15 @@ router.get('/callback', async (req, res, next) => {
     
     // Exchange code for tokens
     const tokenResponse = await axios.post(
-  FANVUE_TOKEN_URL,
-  `grant_type=authorization_code&client_id=${process.env.FANVUE_CLIENT_ID}&code=${code}&redirect_uri=${encodeURIComponent(process.env.FANVUE_REDIRECT_URI)}&code_verifier=${pkceData.codeVerifier}`,
-  {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${process.env.FANVUE_CLIENT_ID}:${process.env.FANVUE_CLIENT_SECRET}`).toString('base64')}`
-    }
-  }
-);
+      FANVUE_TOKEN_URL,
+      `grant_type=authorization_code&client_id=${process.env.FANVUE_CLIENT_ID}&code=${code}&redirect_uri=${encodeURIComponent(process.env.FANVUE_REDIRECT_URI)}&code_verifier=${pkceData.codeVerifier}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${Buffer.from(`${process.env.FANVUE_CLIENT_ID}:${process.env.FANVUE_CLIENT_SECRET}`).toString('base64')}`
+        }
+      }
+    );
     
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
     
@@ -110,32 +110,28 @@ router.get('/callback', async (req, res, next) => {
       fanvue_username: profile.username,
       fanvue_display_name: profile.displayName || profile.username,
       avatar_url: profile.avatarUrl || null,
-      // Encrypt tokens before storing — NEVER store plain text
       access_token_enc: encrypt(access_token),
       refresh_token_enc: encrypt(refresh_token),
-      token_expires_at: new Date(Date.now() + expires_in * 1000).toISOString(),
+      token_expires_at: new Date(Date.now() + (expires_in || 3600) * 1000).toISOString(),
       is_active: true,
       last_synced: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
     if (existing) {
-      // Update existing connection
       await supabase
         .from('connected_accounts')
         .update(accountData)
         .eq('id', existing.id);
     } else {
-      // New connection
       await supabase
         .from('connected_accounts')
         .insert({ id: uuidv4(), created_at: new Date().toISOString(), ...accountData });
     }
     
-    // Trigger initial data sync
     res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_success=true&account=${profile.username}`);
   } catch (err) {
-    console.error('OAuth callback error:', err.message, err.response?.data);
+    console.error('OAuth callback error:', err.message, err.response?.status, err.response?.data);
     res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_error=token_exchange_failed`);
   }
 });
@@ -148,7 +144,6 @@ router.delete('/disconnect/:accountId', authenticate, async (req, res, next) => 
   try {
     const { accountId } = req.params;
     
-    // Verify this account belongs to the user's org
     const { data: account, error } = await supabase
       .from('connected_accounts')
       .select('id, organization_id')
