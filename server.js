@@ -21,6 +21,7 @@ const { startTokenRefreshJob } = require('./services/tokenRefresh');
 const { startInboxPollingJob } = require('./services/inboxPoller');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Security
 app.use(helmet());
