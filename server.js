@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-
 const authRoutes = require('./routes/auth');
 const oauthRoutes = require('./routes/oauth');
 const accountsRoutes = require('./routes/accounts');
@@ -16,7 +15,6 @@ const conversationsRoutes = require('./routes/conversations');
 const snippetsRoutes = require('./routes/snippets');
 const scriptsRoutes = require('./routes/scripts');
 const revenueRoutes = require('./routes/revenue');
-
 const { startTokenRefreshJob } = require('./services/tokenRefresh');
 const { startInboxPollingJob } = require('./services/inboxPoller');
 
@@ -25,8 +23,19 @@ app.set('trust proxy', 1);
 
 // Security
 app.use(helmet());
+
+// CORS — strip any .html filename from FRONTEND_URL so origin comparison works
+const rawFrontend = process.env.FRONTEND_URL || 'http://localhost:3000';
+const allowedOrigin = rawFrontend.replace(/\/[^\/]+\.html$/, '');
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    if (!origin || origin === allowedOrigin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
