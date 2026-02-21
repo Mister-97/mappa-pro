@@ -70,19 +70,24 @@ router.get('/callback', async (req, res, next) => {
     }
     pkceStore.delete(state);
 
-    // Exchange code for tokens — Fanvue requires client_secret in form body
+    // Exchange code for tokens — Fanvue uses client_secret_basic (credentials in Authorization header)
+    const credentials = Buffer.from(
+      `${process.env.FANVUE_CLIENT_ID}:${process.env.FANVUE_CLIENT_SECRET}`
+    ).toString('base64');
+
     const tokenResponse = await axios.post(
       FANVUE_TOKEN_URL,
       new URLSearchParams({
         grant_type: 'authorization_code',
-        client_id: process.env.FANVUE_CLIENT_ID,
-        client_secret: process.env.FANVUE_CLIENT_SECRET,
         redirect_uri: process.env.FANVUE_REDIRECT_URI,
         code,
         code_verifier: pkceData.codeVerifier
       }).toString(),
       {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${credentials}`
+        }
       }
     );
 
