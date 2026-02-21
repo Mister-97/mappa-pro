@@ -58,11 +58,6 @@ router.get('/', authenticate, async (req, res, next) => {
     if (filter === 'follow_up') query = query.eq('needs_follow_up', true);
     if (filter === 'mine') query = query.eq('assigned_chatter_id', req.user.id);
 
-    // Search by fan username
-    if (search) {
-      // We filter post-query since it's a join field
-    }
-
     // Sorting
     const sortMap = {
       last_message: 'last_message_at',
@@ -157,13 +152,11 @@ router.post('/:conversationId/lock', authenticate, async (req, res, next) => {
 
     if (!conv) return res.status(404).json({ error: 'Not found' });
 
-    // Check if locked by someone else within 60 seconds
     const lockAge = conv.locked_at
       ? (Date.now() - new Date(conv.locked_at).getTime()) / 1000
       : 999;
 
     if (conv.locked_by && conv.locked_by !== req.user.id && lockAge < 60) {
-      // Fetch locker name
       const { data: locker } = await supabase
         .from('users')
         .select('name')
@@ -197,7 +190,7 @@ router.delete('/:conversationId/lock', authenticate, async (req, res, next) => {
       .from('conversations')
       .update({ locked_by: null, locked_at: null })
       .eq('id', req.params.conversationId)
-      .eq('locked_by', req.user.id); // only release your own lock
+      .eq('locked_by', req.user.id);
 
     res.json({ released: true });
   } catch (err) {
@@ -245,32 +238,39 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
       return res.status(400).json({ error: 'content or media required' });
     }
 
-    // Get conversation + account
+    // Get conversation + account + fan's fanvue_fan_id (= the userUuid for the API)
     const { data: conv, error: convError } = await supabase
       .from('conversations')
-      .select('*, account:connected_accounts(*)')
+      .select('*, account:connected_accounts(*), fan:fans(fanvue_fan_id)')
       .eq('id', req.params.conversationId)
       .eq('organization_id', req.user.organization_id)
       .single();
 
     if (convError || !conv) return res.status(404).json({ error: 'Conversation not found' });
 
+    const fanUserUuid = conv.fan?.fanvue_fan_id;
+
     // Send via Fanvue API
+    // fanvue_fan_id stores the fan's Fanvue UUID, which is the userUuid used by the chats API
     let fanvueMessageId = null;
     try {
       const fanvueResponse = await fanvueApi.sendMessage(
         conv.account,
-        conv.fan_id, // Fanvue fan ID
-        content,
-        { mediaUrls, isPpv, ppvPrice }
+        fanUserUuid,
+        {
+          text: content || null,
+          mediaUuids: [], // TODO: upload media to Fanvue and get UUIDs first
+          price: isPpv && ppvPrice ? ppvPrice : null
+        }
       );
-      fanvueMessageId = fanvueResponse?.messageId;
+      // Response shape: { uuid, text, sentAt, ... }
+      fanvueMessageId = fanvueResponse?.uuid || null;
     } catch (apiErr) {
       console.error('Fanvue send error:', apiErr.message);
-      // Continue — store locally even if API fails, retry later
+      // Continue — store locally even if API fails
     }
 
-    // Store message
+    // Store message locally
     const msgId = uuidv4();
     const { data: message, error: msgError } = await supabase
       .from('messages')
@@ -305,7 +305,6 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
       })
       .eq('id', req.params.conversationId);
 
-    // Update fan message count
     await supabase.rpc('increment_fan_message_count', { fan_id: conv.fan_id });
 
     res.status(201).json({ message });
@@ -329,7 +328,7 @@ router.post('/sync/:accountId', authenticate, async (req, res, next) => {
 
     if (error || !account) return res.status(404).json({ error: 'Account not found' });
 
-    // Async sync — don't block the request
+    // Async — don't block the response
     syncInbox(account).catch(err => console.error('Sync error:', err.message));
 
     res.json({ message: 'Sync initiated', accountId: req.params.accountId });
@@ -340,6 +339,17 @@ router.post('/sync/:accountId', authenticate, async (req, res, next) => {
 
 /**
  * Sync inbox from Fanvue API into our DB
+ *
+ * Real Fanvue chat object shape:
+ * {
+ *   user: { uuid, username, displayName, profileImageUrl },
+ *   lastMessage: { uuid, text, sentAt, sender },  // sender: 'creator' | 'fan'
+ *   isRead: bool,
+ *   unreadMessagesCount: number,
+ *   lastMessageAt: ISO string,
+ *   isMuted: bool,
+ *   createdAt: ISO string
+ * }
  */
 async function syncInbox(account) {
   try {
@@ -351,43 +361,60 @@ async function syncInbox(account) {
         updated_at: new Date().toISOString()
       });
 
-    const messages = await fanvueApi.getMessages(account, 1, 50);
+    // Fetch up to 50 most recent chats from Fanvue
+    const response = await fanvueApi.getChats(account, 1, 50);
 
-    if (!messages?.data) return;
+    if (!response?.data?.length) {
+      await supabase
+        .from('inbox_sync_state')
+        .upsert({
+          account_id: account.id,
+          sync_status: 'idle',
+          last_synced_at: new Date().toISOString(),
+          error_message: null,
+          updated_at: new Date().toISOString()
+        });
+      return;
+    }
 
-    for (const thread of messages.data) {
-      // Upsert fan
-      const { data: fan } = await supabase
+    for (const chat of response.data) {
+      const fan = chat.user;
+      const lastMsg = chat.lastMessage;
+
+      // Upsert fan — fanvue_fan_id stores the fan's Fanvue UUID
+      const { data: fanRow } = await supabase
         .from('fans')
         .upsert({
           account_id: account.id,
           organization_id: account.organization_id,
-          fanvue_fan_id: thread.fanId,
-          username: thread.fanUsername,
-          display_name: thread.fanDisplayName,
-          avatar_url: thread.fanAvatarUrl,
-          last_message_at: thread.lastMessageAt,
-          last_active_at: thread.lastMessageAt,
+          fanvue_fan_id: fan.uuid,
+          username: fan.username,
+          display_name: fan.displayName,
+          avatar_url: fan.profileImageUrl,
+          last_message_at: chat.lastMessageAt,
+          last_active_at: chat.lastMessageAt,
           updated_at: new Date().toISOString()
         }, { onConflict: 'account_id,fanvue_fan_id' })
         .select('id')
         .single();
 
-      if (!fan) continue;
+      if (!fanRow) continue;
 
       // Upsert conversation
+      // fanvue_thread_id stores the fan's UUID (it IS the thread identifier in Fanvue's API)
       await supabase
         .from('conversations')
         .upsert({
           account_id: account.id,
           organization_id: account.organization_id,
-          fan_id: fan.id,
-          fanvue_thread_id: thread.threadId,
-          is_unread: thread.unreadCount > 0,
-          unread_count: thread.unreadCount || 0,
-          last_message_at: thread.lastMessageAt,
-          last_message_preview: thread.lastMessagePreview,
-          last_message_from: thread.lastMessageFrom,
+          fan_id: fanRow.id,
+          fanvue_thread_id: fan.uuid,
+          is_unread: !chat.isRead,
+          unread_count: chat.unreadMessagesCount || 0,
+          last_message_at: chat.lastMessageAt,
+          last_message_preview: lastMsg?.text?.substring(0, 100) || (lastMsg?.uuid ? '[Media]' : null),
+          last_message_from: lastMsg?.sender === 'creator' ? 'model' : 'fan',
+          status: 'open',
           updated_at: new Date().toISOString()
         }, { onConflict: 'account_id,fan_id' });
     }
