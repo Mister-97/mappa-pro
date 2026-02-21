@@ -5,21 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 
 /**
  * Poll Fanvue inbox every 60 seconds for all active accounts.
- * Syncs new/updated chats into conversations + fans tables.
- *
- * Real Fanvue chat object shape:
- * {
- *   user: { uuid, username, displayName, profileImageUrl },
- *   lastMessage: { uuid, text, sentAt, sender },  // sender: 'creator' | 'fan'
- *   isRead: bool,
- *   unreadMessagesCount: number,
- *   lastMessageAt: ISO string,
- *   isMuted: bool,
- *   createdAt: ISO string
- * }
- *
- * IMPORTANT: In Fanvue's API, the fan's UUID *is* the chat identifier.
- * There is no separate threadId — we store fan.uuid as fanvue_thread_id.
+ * Syncs new conversations into conversations + fans tables.
  */
 function startInboxPollingJob() {
   cron.schedule('*/60 * * * * *', async () => {
@@ -46,69 +32,98 @@ function startInboxPollingJob() {
 
 async function pollAccount(account) {
   try {
-    // Fetch the 30 most recently active chats
-    const response = await fanvueApi.getChats(account, 1, 30, null, 'most_recent_messages');
+    // Mark sync as running
+    await supabase
+      .from('inbox_sync_state')
+      .upsert({
+        account_id: account.id,
+        sync_status: 'syncing',
+        updated_at: new Date().toISOString()
+      });
 
-    if (!response?.data?.length) return;
+    // Fetch latest chats from Fanvue
+    // Response: { data: [{ user, lastMessage, isRead, unreadMessagesCount, ... }], pagination }
+    const response = await fanvueApi.getChats(account, 1, 50);
+    if (!response?.data?.length) {
+      await supabase
+        .from('inbox_sync_state')
+        .upsert({
+          account_id: account.id,
+          last_synced_at: new Date().toISOString(),
+          sync_status: 'idle',
+          error_message: null,
+          updated_at: new Date().toISOString()
+        });
+      return;
+    }
 
     let newMessageCount = 0;
 
     for (const chat of response.data) {
-      const fan = chat.user;
+      // Fanvue chat object shape:
+      // chat.user = { uuid, username, displayName, avatarUrl, ... }
+      // chat.lastMessage = { uuid, text, sentAt, sender: { uuid }, ... }
+      // chat.isRead, chat.unreadMessagesCount
+      const fan_user = chat.user;
       const lastMsg = chat.lastMessage;
 
-      // Upsert fan — fanvue_fan_id = fan's Fanvue UUID
-      const { data: fanRow } = await supabase
+      if (!fan_user?.uuid) continue;
+
+      // Upsert fan record
+      const { data: fan } = await supabase
         .from('fans')
         .upsert({
           account_id: account.id,
           organization_id: account.organization_id,
-          fanvue_fan_id: fan.uuid,
-          username: fan.username,
-          display_name: fan.displayName,
-          avatar_url: fan.profileImageUrl,
-          last_message_at: chat.lastMessageAt,
-          last_active_at: chat.lastMessageAt,
+          fanvue_fan_id: fan_user.uuid,
+          username: fan_user.username,
+          display_name: fan_user.displayName,
+          avatar_url: fan_user.avatarUrl,
+          last_active_at: lastMsg?.sentAt || null,
+          last_message_at: lastMsg?.sentAt || null,
           updated_at: new Date().toISOString()
         }, { onConflict: 'account_id,fanvue_fan_id' })
         .select('id')
         .single();
 
-      if (!fanRow) continue;
+      if (!fan) continue;
 
-      // Check if this chat has newer activity than what we have
+      // Check if conversation needs updating
       const { data: existingConv } = await supabase
         .from('conversations')
         .select('id, last_message_at, unread_count')
         .eq('account_id', account.id)
-        .eq('fan_id', fanRow.id)
+        .eq('fan_id', fan.id)
         .single();
 
-      const isNewer = !existingConv ||
-        new Date(chat.lastMessageAt) > new Date(existingConv.last_message_at || 0);
+      const isNew = !existingConv ||
+        new Date(lastMsg?.sentAt) > new Date(existingConv.last_message_at || 0);
 
-      if (isNewer) {
+      if (isNew) {
         newMessageCount++;
 
-        // Upsert conversation
+        // Determine message direction: inbound if sender is the fan
+        const isFromFan = lastMsg?.sender?.uuid === fan_user.uuid;
+        const lastMessageFrom = isFromFan ? 'fan' : 'creator';
+
         await supabase
           .from('conversations')
           .upsert({
             account_id: account.id,
             organization_id: account.organization_id,
-            fan_id: fanRow.id,
-            fanvue_thread_id: fan.uuid,   // fan UUID is the chat identifier
+            fan_id: fan.id,
+            fanvue_thread_id: fan_user.uuid, // Fanvue uses fan UUID as thread ID
             is_unread: !chat.isRead,
             unread_count: chat.unreadMessagesCount || 0,
-            last_message_at: chat.lastMessageAt,
-            last_message_preview: lastMsg?.text?.substring(0, 100) || (lastMsg?.uuid ? '[Media]' : null),
-            last_message_from: lastMsg?.sender === 'creator' ? 'model' : 'fan',
+            last_message_at: lastMsg?.sentAt || null,
+            last_message_preview: lastMsg?.text?.substring(0, 100) || null,
+            last_message_from: lastMessageFrom,
             status: 'open',
             updated_at: new Date().toISOString()
           }, { onConflict: 'account_id,fan_id' });
 
-        // Cache the last inbound message if it came from the fan
-        if (lastMsg?.sender === 'fan' && lastMsg?.uuid) {
+        // Cache inbound message in messages table
+        if (isFromFan && lastMsg?.uuid) {
           const { data: existingMsg } = await supabase
             .from('messages')
             .select('id')
@@ -116,12 +131,11 @@ async function pollAccount(account) {
             .single();
 
           if (!existingMsg) {
-            // Need the conversation id — re-query after upsert
             const { data: conv } = await supabase
               .from('conversations')
               .select('id')
               .eq('account_id', account.id)
-              .eq('fan_id', fanRow.id)
+              .eq('fan_id', fan.id)
               .single();
 
             if (conv) {
@@ -132,6 +146,8 @@ async function pollAccount(account) {
                 fanvue_message_id: lastMsg.uuid,
                 direction: 'inbound',
                 content: lastMsg.text || null,
+                is_ppv: lastMsg.pricing?.price > 0 || false,
+                ppv_price: lastMsg.pricing?.price || null,
                 sent_at: lastMsg.sentAt
               });
             }
@@ -166,6 +182,14 @@ async function pollAccount(account) {
         error_message: err.message,
         updated_at: new Date().toISOString()
       });
+
+    // If it's an auth error, mark account as needing reconnect
+    if (err.message?.includes('401') || err.message?.includes('403')) {
+      await supabase
+        .from('connected_accounts')
+        .update({ is_active: false, needs_reconnect: true })
+        .eq('id', account.id);
+    }
   }
 }
 
