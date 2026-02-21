@@ -21,34 +21,16 @@ const { startInboxPollingJob } = require('./services/inboxPoller');
 const app = express();
 app.set('trust proxy', 1);
 
-// Security
 app.use(helmet());
+app.use(cors({ origin: '*', credentials: false }));
 
-// CORS — strip any .html filename from FRONTEND_URL so origin comparison works
-const rawFrontend = process.env.FRONTEND_URL || 'http://localhost:3000';
-const allowedOrigin = rawFrontend.replace(/\/[^\/]+\.html$/, '');
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || origin === allowedOrigin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
-
-// Rate limiting
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use('/api/', limiter);
 
-// Logging & parsing
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/oauth', oauthRoutes);
 app.use('/api/accounts', accountsRoutes);
@@ -61,10 +43,8 @@ app.use('/api/snippets', snippetsRoutes);
 app.use('/api/scripts', scriptsRoutes);
 app.use('/api/revenue', revenueRoutes);
 
-// Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
@@ -73,7 +53,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Background jobs
 startTokenRefreshJob();
 startInboxPollingJob();
 
