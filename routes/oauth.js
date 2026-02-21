@@ -9,7 +9,7 @@ const { encrypt } = require('../utils/encryption');
 const router = express.Router();
 
 const FANVUE_AUTH_URL = 'https://auth.fanvue.com/oauth2/auth';
-const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth/token';
+const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth2/token';
 const FANVUE_API_BASE = 'https://api.fanvue.com/v1';
 
 // In-memory PKCE store (use Redis in production)
