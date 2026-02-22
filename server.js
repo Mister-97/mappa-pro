@@ -22,7 +22,7 @@ const { startInboxPollingJob } = require('./services/inboxPoller');
 const app = express();
 app.set('trust proxy', 1);
 
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: '*', credentials: false }));
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
@@ -49,6 +49,10 @@ app.use('/api/scripts', scriptsRoutes);
 app.use('/api/revenue', revenueRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+
+// Serve static frontend
+app.use(express.static('.'));
+app.get('/', (req, res) => res.sendFile('flowdesk-complete.html', { root: '.' }));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
