@@ -58,13 +58,13 @@ router.get('/', authenticate, async (req, res, next) => {
     if (filter === 'follow_up') query = query.eq('needs_follow_up', true);
     if (filter === 'mine') query = query.eq('assigned_chatter_id', req.user.id);
 
-    // Sorting
+    // Sorting — pinned always floats to top, then by last_message_at desc
     const sortMap = {
       last_message: 'last_message_at',
       pinned: 'is_pinned',
     };
-    query = query.order(sortMap[sort] || 'last_message_at', { ascending: false });
     query = query.order('is_pinned', { ascending: false });
+    query = query.order(sortMap[sort] || 'last_message_at', { ascending: false });
 
     // Pagination
     const from = (page - 1) * limit;
@@ -112,7 +112,7 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
       .update({ is_unread: false, unread_count: 0 })
       .eq('id', req.params.conversationId);
 
-    // Get messages
+    // Get messages — ascending so oldest is at top, newest at bottom (standard chat UI)
     const { data: messages } = await supabase
       .from('messages')
       .select(`
@@ -251,7 +251,6 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
     const fanUserUuid = conv.fan?.fanvue_fan_id;
 
     // Send via Fanvue API
-    // fanvue_fan_id stores the fan's Fanvue UUID, which is the userUuid used by the chats API
     let fanvueMessageId = null;
     try {
       const fanvueResponse = await fanvueApi.sendMessage(
@@ -259,15 +258,13 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
         fanUserUuid,
         {
           text: content || null,
-          mediaUuids: [], // TODO: upload media to Fanvue and get UUIDs first
+          mediaUuids: [],
           price: isPpv && ppvPrice ? ppvPrice : null
         }
       );
-      // Response shape: { uuid, text, sentAt, ... }
       fanvueMessageId = fanvueResponse?.uuid || null;
     } catch (apiErr) {
       console.error('Fanvue send error:', apiErr.message);
-      // Continue — store locally even if API fails
     }
 
     // Store message locally
@@ -328,7 +325,6 @@ router.post('/sync/:accountId', authenticate, async (req, res, next) => {
 
     if (error || !account) return res.status(404).json({ error: 'Account not found' });
 
-    // Async — don't block the response
     syncInbox(account).catch(err => console.error('Sync error:', err.message));
 
     res.json({ message: 'Sync initiated', accountId: req.params.accountId });
@@ -339,17 +335,6 @@ router.post('/sync/:accountId', authenticate, async (req, res, next) => {
 
 /**
  * Sync inbox from Fanvue API into our DB
- *
- * Real Fanvue chat object shape:
- * {
- *   user: { uuid, username, displayName, profileImageUrl },
- *   lastMessage: { uuid, text, sentAt, sender },  // sender: 'creator' | 'fan'
- *   isRead: bool,
- *   unreadMessagesCount: number,
- *   lastMessageAt: ISO string,
- *   isMuted: bool,
- *   createdAt: ISO string
- * }
  */
 async function syncInbox(account) {
   try {
@@ -361,7 +346,6 @@ async function syncInbox(account) {
         updated_at: new Date().toISOString()
       });
 
-    // Fetch up to 50 most recent chats from Fanvue
     const response = await fanvueApi.getChats(account, 1, 50);
 
     if (!response?.data?.length) {
@@ -381,7 +365,6 @@ async function syncInbox(account) {
       const fan = chat.user;
       const lastMsg = chat.lastMessage;
 
-      // Upsert fan — fanvue_fan_id stores the fan's Fanvue UUID
       const { data: fanRow } = await supabase
         .from('fans')
         .upsert({
@@ -400,8 +383,6 @@ async function syncInbox(account) {
 
       if (!fanRow) continue;
 
-      // Upsert conversation
-      // fanvue_thread_id stores the fan's UUID (it IS the thread identifier in Fanvue's API)
       await supabase
         .from('conversations')
         .upsert({
