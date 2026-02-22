@@ -15,6 +15,7 @@ const conversationsRoutes = require('./routes/conversations');
 const snippetsRoutes = require('./routes/snippets');
 const scriptsRoutes = require('./routes/scripts');
 const revenueRoutes = require('./routes/revenue');
+const webhooksRoutes = require('./routes/webhooks');
 const { startTokenRefreshJob } = require('./services/tokenRefresh');
 const { startInboxPollingJob } = require('./services/inboxPoller');
 
@@ -28,6 +29,10 @@ const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use('/api/', limiter);
 
 app.use(morgan('dev'));
+
+// Webhooks need raw body for signature verification — mount before json parser
+app.use('/api/webhooks', webhooksRoutes);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

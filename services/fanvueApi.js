@@ -13,7 +13,6 @@ async function getValidToken(account) {
   const now = new Date();
   const expiresAt = new Date(account.token_expires_at);
 
-  // Refresh if expiring within 5 minutes
   if (expiresAt - now < 5 * 60 * 1000) {
     return await refreshToken(account);
   }
@@ -90,9 +89,75 @@ async function getProfile(account) {
 }
 
 /**
+ * Get creator stats — uses /users/me which includes subscriber/follower/content counts
+ */
+async function getStats(account) {
+  const profile = await fanvueRequest(account, 'GET', '/users/me');
+  return {
+    subscriberCount: profile?.subscribersCount || 0,
+    followerCount: profile?.followersCount || 0,
+    imageCount: profile?.imageCount || 0,
+    videoCount: profile?.videoCount || 0,
+    postCount: profile?.postCount || 0,
+    newSubscribers: 0
+  };
+}
+
+/**
+ * Get earnings for a period
+ * GET /creator/earnings?period=
+ */
+async function getEarnings(account, period = '30d') {
+  try {
+    return await fanvueRequest(account, 'GET', '/creator/earnings', null, { period });
+  } catch {
+    try {
+      return await fanvueRequest(account, 'GET', '/earnings', null, { period });
+    } catch {
+      return { total: 0, currency: 'USD', period };
+    }
+  }
+}
+
+/**
+ * Get earnings breakdown (PPV, subscription, tips)
+ * GET /creator/earnings/breakdown
+ */
+async function getEarningsBreakdown(account) {
+  try {
+    return await fanvueRequest(account, 'GET', '/creator/earnings/breakdown');
+  } catch {
+    return { ppv: 0, subscription: 0, tips: 0, other: 0 };
+  }
+}
+
+/**
+ * Get subscriber list
+ * GET /subscriptions?page=
+ */
+async function getSubscribers(account, page = 1) {
+  try {
+    return await fanvueRequest(account, 'GET', '/subscriptions', null, { page, size: 50 });
+  } catch {
+    return { data: [], pagination: { total: 0 } };
+  }
+}
+
+/**
+ * Get PPV performance stats
+ * GET /creator/ppv/stats
+ */
+async function getPPVStats(account) {
+  try {
+    return await fanvueRequest(account, 'GET', '/creator/ppv/stats');
+  } catch {
+    return { totalSales: 0, totalRevenue: 0, conversionRate: 0 };
+  }
+}
+
+/**
  * Get list of chat conversations (paginated)
  * GET /chats
- * Returns: { data: [{ user, lastMessage, isRead, unreadMessagesCount, ... }], pagination }
  */
 async function getChats(account, page = 1, size = 50, filter = null, sortBy = 'most_recent_messages') {
   const params = { page, size, sortBy };
@@ -103,7 +168,6 @@ async function getChats(account, page = 1, size = 50, filter = null, sortBy = 'm
 /**
  * Get messages from a specific chat
  * GET /chats/{userUuid}/messages
- * Returns: { data: [{ uuid, text, sentAt, sender, recipient, hasMedia, pricing, ... }], pagination }
  */
 async function getChatMessages(account, userUuid, page = 1, size = 50, markAsRead = false) {
   const params = { page, size, markAsRead: markAsRead ? 'true' : 'false' };
@@ -124,7 +188,7 @@ async function sendMessage(account, userUuid, { text = null, mediaUuids = [], pr
 }
 
 /**
- * Send a mass message to multiple users
+ * Send a mass message
  * POST /chats/mass-messages
  */
 async function sendMassMessage(account, { text, mediaUuids = [], price = null, includedLists, excludedLists = null }) {
@@ -136,7 +200,7 @@ async function sendMassMessage(account, { text, mediaUuids = [], price = null, i
 }
 
 /**
- * Get unread chats and messages count
+ * Get unread chats count
  * GET /chats/unread
  */
 async function getUnreadCount(account) {
@@ -144,7 +208,7 @@ async function getUnreadCount(account) {
 }
 
 /**
- * Update chat properties (read status, mute, nickname)
+ * Update chat properties
  * PATCH /chats/{userUuid}
  */
 async function updateChat(account, userUuid, { isRead, isMuted, nickname } = {}) {
@@ -156,9 +220,8 @@ async function updateChat(account, userUuid, { isRead, isMuted, nickname } = {})
 }
 
 /**
- * Get online statuses for multiple users (batch)
+ * Get online statuses for multiple users
  * POST /chats/statuses
- * Returns: { [userUuid]: { isOnline, lastSeenAt } }
  */
 async function getBatchStatuses(account, userUuids) {
   return fanvueRequest(account, 'POST', '/chats/statuses', { userUuids });
@@ -173,7 +236,7 @@ async function deleteMessage(account, userUuid, messageUuid) {
 }
 
 /**
- * Get media from a chat (cursor-paginated)
+ * Get media from a chat
  * GET /chats/{userUuid}/media
  */
 async function getChatMedia(account, userUuid, { cursor = null, mediaType = null, limit = 20 } = {}) {
@@ -185,6 +248,11 @@ async function getChatMedia(account, userUuid, { cursor = null, mediaType = null
 
 module.exports = {
   getProfile,
+  getStats,
+  getEarnings,
+  getEarningsBreakdown,
+  getSubscribers,
+  getPPVStats,
   getChats,
   getChatMessages,
   sendMessage,
