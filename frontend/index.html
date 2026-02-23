@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowDesk — OFM Agency CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090e;--s1:#0c0f17;--s2:#111520;--s3:#181d2a;--s4:#1f2535;--s5:#263044;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.17);
+  --accent:#7c5cfc;--accent2:#a78bfa;--accent3:#c4b5fd;--glow:rgba(124,92,252,0.22);
+  --green:#22c55e;--green-bg:rgba(34,197,94,0.1);--red:#f43f5e;--red-bg:rgba(244,63,94,0.1);
+  --yellow:#f59e0b;--yellow-bg:rgba(245,158,11,0.1);--cyan:#22d3ee;
+  --text:#eef2f8;--text2:#8b98b4;--text3:#424f6b;
+  --r:10px;--r2:14px;--sidebar:220px;--topbar:50px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+button,input,textarea,select{font-family:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s5);border-radius:2px}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{width:380px;background:var(--s1);border:1px solid var(--border2);border-radius:20px;padding:36px}
+.login-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.5px;background:linear-gradient(135deg,#fff 20%,var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--text3);margin-bottom:28px}
+.login-field{margin-bottom:14px}
+.login-label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.3px;margin-bottom:5px;display:block}
+.login-input{width:100%;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s}
+.login-input:focus{border-color:var(--accent)}
+.login-input::placeholder{color:var(--text3)}
+.login-btn{width:100%;padding:11px;border-radius:9px;background:var(--accent);border:none;color:white;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;transition:all .15s;box-shadow:0 0 24px var(--glow)}
+.login-btn:hover{background:#6d4fe0}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-err{font-size:12px;color:var(--red);margin-top:10px;text-align:center;min-height:18px}
+
+/* TOP BAR */
+.topbar{height:var(--topbar);background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;z-index:200}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;letter-spacing:-0.5px;background:linear-gradient(135deg,#fff 20%,var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:7px;white-space:nowrap;flex-shrink:0}
+.logo-icon{font-size:14px;-webkit-text-fill-color:initial}
+.topbar-divider{width:1px;height:22px;background:var(--border2);flex-shrink:0}
+.page-title{font-size:13px;color:var(--text2);font-weight:400}
+.page-title strong{color:var(--text);font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--s3);font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.pill:hover{border-color:var(--border2);color:var(--text)}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulseAnim 2s infinite}
+@keyframes pulseAnim{0%,100%{opacity:1}50%{opacity:.3}}
+.avatar-chip{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;cursor:pointer;border:2px solid var(--border2);flex-shrink:0}
+
+/* APP SHELL */
+.app-shell{flex:1;display:flex;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);min-width:var(--sidebar);background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.nav-section{padding:16px 12px 6px;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 14px;margin:1px 6px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:400;transition:all .12s;position:relative;border:1px solid transparent}
+.nav-item:hover{background:var(--s3);color:var(--text)}
+.nav-item.active{background:rgba(124,92,252,0.12);color:var(--text);border-color:rgba(124,92,252,0.2)}
+.nav-item.active .nav-icon{color:var(--accent2)}
+.nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--accent);color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
+.nav-badge.green{background:rgba(34,197,94,0.2);color:var(--green)}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border)}
+.sidebar-user{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .12s}
+.sidebar-user:hover{background:var(--s3)}
+.sidebar-user-info{flex:1;min-width:0}
+.sidebar-user-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-user-role{font-size:10px;color:var(--text3)}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.page{display:none;flex:1;overflow-y:auto;padding:24px;flex-direction:column;gap:20px}
+.page.active{display:flex}
+
+/* SHARED */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+.card-subtitle{font-size:12px;color:var(--text3);margin-top:2px}
+.card-body{padding:20px}
+.stat-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s;cursor:default}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;top:-40px;right:-40px;width:100px;height:100px;border-radius:50%;background:var(--accent-glow,rgba(255,255,255,0.02));pointer-events:none}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.stat-value{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:5px;display:flex;align-items:center;gap:4px}
+.stat-up{color:var(--green)}.stat-down{color:var(--red)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .12s}
+.btn-primary{background:var(--accent);color:white;box-shadow:0 0 20px var(--glow)}
+.btn-primary:hover{background:#6d4fe0;transform:translateY(-1px)}
+.btn-ghost{background:var(--s3);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:7px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:.3px}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.badge-purple{background:rgba(124,92,252,0.15);color:var(--accent2)}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.flex-row{display:flex;align-items:center;gap:10px}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+
+/* DASHBOARD */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:4px}
+.page-heading{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
+.page-sub{font-size:13px;color:var(--text3);margin-top:3px}
+.account-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:16px;transition:all .15s;cursor:pointer}
+.account-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.account-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:white;margin-bottom:12px;position:relative}
+.account-avatar-status{position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid var(--s1)}
+.account-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.account-handle{font-size:11px;color:var(--text3);margin-bottom:10px}
+.account-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.account-stat{background:var(--s3);border-radius:7px;padding:7px 9px}
+.account-stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.account-stat-value{font-size:14px;font-weight:600;color:var(--text)}
+.activity-feed{display:flex;flex-direction:column;gap:0}
+.activity-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.activity-text{font-size:12px;color:var(--text2);flex:1}
+.activity-text strong{color:var(--text)}
+.activity-time{font-size:10px;color:var(--text3);white-space:nowrap}
+.activity-amount{font-size:12px;font-weight:600;color:var(--green);white-space:nowrap}
+
+/* MESSAGE PRO */
+.msgpro-shell{flex:1;display:flex;overflow:hidden;margin:-24px}
+.model-strip{height:44px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:4px;flex-shrink:0;overflow-x:auto}
+.model-strip::-webkit-scrollbar{display:none}
+.model-tab{display:flex;align-items:center;gap:7px;padding:5px 11px 5px 7px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:12px;transition:all .12s;white-space:nowrap;border:1px solid transparent;flex-shrink:0}
+.model-tab:hover{background:var(--s3);color:var(--text)}
+.model-tab.active{background:rgba(124,92,252,0.12);color:var(--text);border-color:rgba(124,92,252,0.25)}
+.model-tab-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0}
+.model-tab-unread{background:var(--accent);color:white;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center}
+.add-acct-btn{width:28px;height:28px;border-radius:7px;background:transparent;border:1px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:14px;transition:all .12s;flex-shrink:0}
+.add-acct-btn:hover{border-color:var(--accent);color:var(--accent2)}
+.inbox-rail{width:280px;min-width:260px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.inbox-top{padding:10px 12px;border-bottom:1px solid var(--border)}
+.inbox-search{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12px;color:var(--text);outline:none;transition:border-color .15s;margin-bottom:7px}
+.inbox-search:focus{border-color:var(--accent)}
+.inbox-search::placeholder{color:var(--text3)}
+.inbox-filters{display:flex;gap:4px;flex-wrap:wrap}
+.ifilter{font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;border:1px solid var(--border);cursor:pointer;color:var(--text2);background:transparent;transition:all .1s}
+.ifilter:hover{border-color:var(--border2);color:var(--text)}
+.ifilter.active{background:rgba(124,92,252,0.15);border-color:rgba(124,92,252,0.3);color:var(--accent2)}
+.inbox-list{flex:1;overflow-y:auto}
+.convo-row{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;border-left:2px solid transparent}
+.convo-row:hover{background:var(--s2)}
+.convo-row.active{background:rgba(124,92,252,0.07);border-left-color:var(--accent)}
+.cr-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.cr-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0;position:relative}
+.cr-name{font-size:12px;font-weight:500;color:var(--text);flex:1}
+.cr-time{font-size:10px;color:var(--text3)}
+.cr-preview{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;padding-left:42px}
+.cr-meta{display:flex;align-items:center;gap:5px;padding-left:42px}
+.cr-unread{background:var(--accent);color:white;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:auto}
+.sub-tabs{height:36px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:3px;overflow-x:auto;flex-shrink:0}
+.sub-tabs::-webkit-scrollbar{display:none}
+.stab-label{font-size:10px;color:var(--text3);margin-right:3px;white-space:nowrap;flex-shrink:0}
+.sub-tab{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;cursor:pointer;color:var(--text2);font-size:11px;transition:all .1s;white-space:nowrap;border:1px solid transparent;flex-shrink:0}
+.sub-tab:hover{background:var(--s3);color:var(--text)}
+.sub-tab.active{background:var(--s4);color:var(--text);border-color:var(--border2)}
+.stab-unread{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.stab-close{font-size:9px;color:var(--text3);padding:1px 2px;border-radius:2px}
+.stab-close:hover{color:var(--red)}
+.chat-col{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.chat-thread-area{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:3px}
+.chat-empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);gap:8px}
+.chat-empty-state .icon{font-size:36px;opacity:.5}
+.chat-loading{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px}
+.date-sep{text-align:center;font-size:10px;color:var(--text3);padding:10px 0;position:relative}
+.date-sep::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)}
+.date-sep span{background:var(--bg);padding:0 10px;position:relative;z-index:1}
+.msg-row{display:flex;gap:8px;margin-bottom:1px;animation:msgIn .18s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg-row.out{flex-direction:row-reverse}
+.msg-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;align-self:flex-end}
+.msg-wrap{display:flex;flex-direction:column;max-width:62%}
+.msg-row.out .msg-wrap{align-items:flex-end}
+.msg-bubble{padding:8px 12px;border-radius:13px;font-size:13px;line-height:1.5}
+.msg-row.in .msg-bubble{background:var(--s3);color:var(--text);border-bottom-left-radius:4px}
+.msg-row.out .msg-bubble{background:rgba(124,92,252,0.18);color:var(--text);border-bottom-right-radius:4px}
+.msg-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.snip-panel{border-top:1px solid var(--border);padding:8px 14px;flex-shrink:0;display:none}
+.snip-panel.open{display:block}
+.snip-search{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-size:11px;color:var(--text);outline:none;margin-bottom:6px}
+.snip-search::placeholder{color:var(--text3)}
+.snip-grid{display:flex;gap:5px;flex-wrap:wrap;max-height:80px;overflow-y:auto}
+.snip-chip{padding:4px 10px;background:var(--s3);border:1px solid var(--border);border-radius:7px;font-size:11px;color:var(--text2);cursor:pointer;transition:all .1s}
+.snip-chip:hover{border-color:var(--accent);color:var(--accent2);background:rgba(124,92,252,0.08)}
+.composer{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0}
+.composer-tools{display:flex;align-items:center;gap:5px;padding:7px 12px;border-bottom:1px solid var(--border)}
+.tool-btn{display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text2);font-size:11px;transition:all .12s}
+.tool-btn:hover{background:var(--s3);color:var(--text);border-color:var(--border2)}
+.tool-btn.on{background:rgba(124,92,252,0.12);color:var(--accent2);border-color:rgba(124,92,252,0.3)}
+.tool-btn.ppv-on{background:var(--yellow-bg);color:var(--yellow);border-color:rgba(245,158,11,0.3)}
+.ppv-price{width:60px;padding:3px 7px;background:var(--s3);border:1px solid rgba(245,158,11,0.4);border-radius:6px;color:var(--yellow);font-size:11px;outline:none;display:none}
+.char-ct{margin-left:auto;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.composer-row{display:flex;align-items:flex-end;gap:8px;padding:9px 12px}
+.composer-ta{flex:1;background:var(--s3);border:1px solid var(--border2);border-radius:10px;padding:9px 13px;font-size:13px;color:var(--text);resize:none;outline:none;min-height:40px;max-height:110px;line-height:1.5;transition:border-color .15s}
+.composer-ta:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,252,0.08)}
+.composer-ta::placeholder{color:var(--text3)}
+.send-btn{width:38px;height:38px;border-radius:9px;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;transition:all .15s;flex-shrink:0;box-shadow:0 0 18px var(--glow)}
+.send-btn:hover{background:#6d4fe0;transform:translateY(-1px)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* CRM PANEL */
+.crm-panel{width:280px;min-width:260px;background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.crm-sec{padding:14px;border-bottom:1px solid var(--border)}
+.crm-sec-title{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.fan-head{display:flex;align-items:center;gap:9px}
+.fan-av-lg{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;flex-shrink:0}
+.fan-name{font-size:14px;font-weight:600;color:var(--text)}
+.fan-handle{font-size:11px;color:var(--text3)}
+.stat-row-sm{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.srs-label{font-size:11px;color:var(--text2)}
+.srs-value{font-size:12px;font-weight:600;color:var(--text)}
+.srs-value.green{color:var(--green)}.srs-value.accent{color:var(--accent2)}
+.tags-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.tag-chip-sm{display:flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;background:var(--s3);border:1px solid var(--border);font-size:10px;color:var(--text2)}
+.tag-rm{cursor:pointer;color:var(--text3);font-size:9px;transition:color .1s}
+.tag-rm:hover{color:var(--red)}
+.tag-add-row{display:flex;gap:4px}
+.tag-input{flex:1;padding:4px 8px;background:var(--s3);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text);outline:none}
+.tag-input:focus{border-color:var(--accent)}
+.notes-ta{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:11px;color:var(--text);resize:none;outline:none;min-height:60px;margin-bottom:6px;line-height:1.4}
+.notes-ta:focus{border-color:var(--accent)}
+.notes-ta::placeholder{color:var(--text3)}
+.crm-action-btn{width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--s3);color:var(--text2);font-size:11px;cursor:pointer;transition:all .1s;text-align:left;display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.crm-action-btn:hover{background:var(--s4);color:var(--text);border-color:var(--border2)}
+.crm-action-btn.accent{background:rgba(124,92,252,0.08);border-color:rgba(124,92,252,0.25);color:var(--accent2)}
+.crm-action-btn.accent:hover{background:rgba(124,92,252,0.15)}
+
+/* CHARTS */
+.chart-bar-container{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.chart-bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,var(--accent),var(--accent2));min-height:4px;transition:height .4s ease;position:relative;cursor:pointer}
+.chart-bar:hover::after{content:attr(data-val);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--border2);color:var(--text);font-size:10px;padding:2px 6px;border-radius:4px;white-space:nowrap;z-index:10}
+.chart-label{font-size:9px;color:var(--text3);text-align:center}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:28px;min-width:400px;max-width:520px;width:90%;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:5px}
+.modal-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
+.form-field{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.3px;margin-bottom:5px;display:block}
+.form-input{width:100%;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--border2);border-radius:20px;padding:8px 18px;font-size:12px;color:var(--text);z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+
+/* LOADING SPINNER */
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LEADERBOARD */
+.leaderboard-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.leaderboard-row:last-child{border-bottom:none}
+.lb-rank{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text3);width:22px;text-align:center;flex-shrink:0}
+.lb-rank.gold{color:#f59e0b}.lb-rank.silver{color:#94a3b8}.lb-rank.bronze{color:#b45309}
+.lb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-size:13px;font-weight:500;color:var(--text)}
+.lb-stats{font-size:10px;color:var(--text3)}
+.lb-revenue{font-size:14px;font-weight:700;color:var(--green);white-space:nowrap}
+.lb-bar-wrap{height:4px;background:var(--s4);border-radius:2px;margin-top:4px}
+.lb-bar{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">⚡ FlowDesk</div>
+    <div class="login-sub">Sign in to your agency dashboard</div>
+    <div class="login-field">
+      <label class="login-label">Email</label>
+      <input class="login-input" type="email" id="loginEmail" placeholder="you@agency.com" />
+    </div>
+    <div class="login-field">
+      <label class="login-label">Password</label>
+      <input class="login-input" type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<header class="topbar" id="topbar" style="display:none">
+  <div class="logo"><span class="logo-icon">⚡</span>FlowDesk</div>
+  <div class="topbar-divider"></div>
+  <div class="page-title" id="pageTitle"><strong>Dashboard</strong></div>
+  <div class="topbar-right">
+    <div class="pill" id="syncStatusPill"><div class="pulse-dot"></div> <span id="syncStatusText">Loading…</span></div>
+    <div class="pill" onclick="openModal('connectModal')">＋ Connect account</div>
+    <div class="avatar-chip" id="userChip">?</div>
+  </div>
+</header>
+
+<!-- APP SHELL -->
+<div class="app-shell" id="appShell" style="display:none">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section">Main</div>
+    <div class="nav-item active" onclick="goTo('dashboard',this)">
+      <span class="nav-icon">▦</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="goTo('message-pro',this)">
+      <span class="nav-icon">💬</span> Message Pro
+      <span class="nav-badge" id="totalUnreadBadge">0</span>
+    </div>
+    <div class="nav-section">Manage</div>
+    <div class="nav-item" onclick="goTo('accounts',this)">
+      <span class="nav-icon">🔗</span> Accounts
+      <span class="nav-badge green" id="accountsCountBadge">0</span>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar-chip" style="flex-shrink:0" id="sidebarChip">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sidebarName">Loading…</div>
+          <div class="sidebar-user-role" id="sidebarRole">Agency</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-heading" id="dashGreeting">Good morning 👋</div>
+          <div class="page-sub" id="dashSub">Loading your agency data…</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="goToNav('message-pro')">Open Message Pro →</button>
+      </div>
+
+      <div class="grid-4" id="dashStats">
+        <div class="stat-card"><div class="stat-label">Connected Accounts</div><div class="stat-value" id="dStatAccounts">—</div><div class="stat-sub">Active model accounts</div></div>
+        <div class="stat-card"><div class="stat-label">Total Conversations</div><div class="stat-value" id="dStatConvos">—</div><div class="stat-sub">Synced from Fanvue</div></div>
+        <div class="stat-card" style="--accent-glow:rgba(245,158,11,0.1)"><div class="stat-label">Unread Messages</div><div class="stat-value" id="dStatUnread">—</div><div class="stat-sub">Across all accounts</div></div>
+        <div class="stat-card"><div class="stat-label">Last Sync</div><div class="stat-value" style="font-size:16px" id="dStatSync">—</div><div class="stat-sub">Inbox polling active</div></div>
+      </div>
+
+      <!-- Account cards -->
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px">Connected Models</div>
+        <div class="grid-3" id="dashAccountCards">
+          <div class="account-card" style="opacity:.5"><div style="font-size:13px;color:var(--text3)">Loading accounts…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGE PRO PAGE -->
+    <div class="page" id="page-message-pro" style="padding:0;overflow:hidden">
+      <div class="msgpro-shell" style="flex-direction:column">
+        <div style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+
+          <!-- Model strip -->
+          <div class="model-strip" id="modelStrip">
+            <div style="font-size:11px;color:var(--text3)">Loading accounts…</div>
+          </div>
+
+          <!-- 3-col layout -->
+          <div style="flex:1;display:flex;overflow:hidden">
+
+            <!-- Inbox rail -->
+            <div class="inbox-rail">
+              <div class="inbox-top">
+                <input class="inbox-search" type="text" placeholder="Search fans…" oninput="filterInbox(this.value)" />
+                <div class="inbox-filters">
+                  <button class="ifilter active" onclick="setIF('all',this)">All</button>
+                  <button class="ifilter" onclick="setIF('unread',this)">Unread</button>
+                </div>
+              </div>
+              <div class="inbox-list" id="inboxList">
+                <div style="padding:20px;font-size:12px;color:var(--text3);text-align:center">Select an account above</div>
+              </div>
+            </div>
+
+            <!-- Chat col -->
+            <div class="chat-col">
+              <div class="sub-tabs" id="subTabs">
+                <span class="stab-label">Open chats:</span>
+              </div>
+              <div class="chat-thread-area" id="chatThread">
+                <div class="chat-empty-state">
+                  <div class="icon">💬</div>
+                  <div style="font-size:13px">Select a conversation</div>
+                </div>
+              </div>
+              <div class="snip-panel" id="snipPanel">
+                <input class="snip-search" type="text" placeholder="Search saved replies…" oninput="filterSnips(this.value)" />
+                <div class="snip-grid" id="snipGrid"></div>
+              </div>
+              <div class="composer">
+                <div class="composer-tools">
+                  <button class="tool-btn" id="snipBtn" onclick="toggleSnips()">💬 Saved replies</button>
+                  <button class="tool-btn" id="ppvBtn" onclick="togglePPV()">🔒 PPV</button>
+                  <input class="ppv-price" id="ppvPrice" type="number" placeholder="$40" min="1" max="999" />
+                  <span class="char-ct" id="charCt">0 / 500</span>
+                </div>
+                <div class="composer-row">
+                  <textarea class="composer-ta" id="composerTa" placeholder="Type a message…" rows="1"
+                    oninput="onTaInput(this)" onkeydown="onTaKey(event)"></textarea>
+                  <button class="send-btn" id="sendBtn" onclick="sendMsg()">↑</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- CRM Panel -->
+            <div class="crm-panel" id="crmPanel">
+              <div class="crm-sec">
+                <div class="fan-head">
+                  <div class="fan-av-lg" id="crmAv" style="background:var(--s4)">?</div>
+                  <div>
+                    <div class="fan-name" id="crmName">No fan selected</div>
+                    <div class="fan-handle" id="crmHandle">—</div>
+                  </div>
+                </div>
+              </div>
+              <div class="crm-sec">
+                <div class="crm-sec-title">Fan Details</div>
+                <div class="stat-row-sm"><span class="srs-label">Unread messages</span><span class="srs-value accent" id="crmUnread">—</span></div>
+                <div class="stat-row-sm"><span class="srs-label">Last message</span><span class="srs-value" id="crmLastMsg" style="font-size:11px">—</span></div>
+                <div class="stat-row-sm"><span class="srs-label">Status</span><span class="srs-value" id="crmStatus">—</span></div>
+              </div>
+              <div class="crm-sec">
+                <div class="crm-sec-title">Tags</div>
+                <div class="tags-row" id="crmTags"></div>
+                <div class="tag-add-row">
+                  <input class="tag-input" type="text" placeholder="Add tag…" id="tagIn" onkeydown="if(event.key==='Enter')addTag()" />
+                  <button class="btn btn-ghost btn-sm" onclick="addTag()">+</button>
+                </div>
+              </div>
+              <div class="crm-sec">
+                <div class="crm-sec-title">Internal Notes</div>
+                <textarea class="notes-ta" id="crmNotes" placeholder="Private notes — not visible to fan…" onblur="saveNote()"></textarea>
+                <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="saveNote()">Save note</button>
+              </div>
+              <div class="crm-sec">
+                <div class="crm-sec-title">Quick Actions</div>
+                <button class="crm-action-btn" onclick="toast('Follow-up coming soon!')">🔔 Set follow-up</button>
+                <button class="crm-action-btn" onclick="toast('Assignment coming soon!')">👤 Assign chatter</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS PAGE -->
+    <div class="page" id="page-accounts">
+      <div class="page-header">
+        <div>
+          <div class="page-heading">Connected Accounts</div>
+          <div class="page-sub">Manage Fanvue model connections · OAuth tokens · Sync status</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('connectModal')">＋ Connect account</button>
+      </div>
+      <div class="grid-3" id="accountsPageGrid">
+        <div class="account-card" style="opacity:.5"><div style="font-size:13px;color:var(--text3)">Loading…</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Connect Fanvue account -->
+<div class="modal-overlay" id="connectModal" onclick="if(event.target===this)closeModal('connectModal')">
+  <div class="modal">
+    <div class="modal-title">Connect Fanvue Account</div>
+    <div class="modal-sub">Authorize FlowDesk to manage this model's account via OAuth</div>
+    <div style="background:var(--s3);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">
+        Clicking "Connect via Fanvue" will redirect to Fanvue's authorization page.<br>
+        FlowDesk will receive a token to read messages, stats, and send messages on behalf of this account.<br><br>
+        <span style="color:var(--text3)">Tokens are encrypted with AES-256-GCM and never stored in plaintext.</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('connectModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="startOAuth()">Connect via Fanvue →</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? `http://${window.location.host}/api`
+  : 'https://mappa-pro.onrender.com/api';
+let TOKEN = localStorage.getItem('fd_token') || null;
+let currentUser = null;
+let accounts = [];
+let currentAccountIdx = 0;
+let conversations = {}; // keyed by account_id
+let currentConvId = null;
+let openTabs = {}; // account_id -> [conv_id, ...]
+let activeConv = {}; // account_id -> conv_id
+let currentFilter = 'all';
+let ppvOn = false;
+let snipsOpen = false;
+let pollingInterval = null;
+
+const SNIPPETS = [
+  {id:1, title:'Welcome new sub', body:"Hey {{fan_name}}! Welcome, I'm so happy you're here 💕 Any special requests?"},
+  {id:2, title:'PPV tease', body:"I just shot something really special for you… I think you're going to love it 🔥"},
+  {id:3, title:'Locked PPV', body:"I made this just for my special fans 🔒 Only ${{price}} — I promise it's worth it 💋", ppv:true},
+  {id:4, title:'Re-engagement', body:"Hey {{fan_name}}, I've been thinking about you 💭 I've posted some new stuff you'd love…"},
+  {id:5, title:'Tip thank you', body:"Omg {{fan_name}} thank you SO much for the tip!! You're literally the sweetest 🥺💕"},
+  {id:6, title:'Rebill reminder', body:"Hey babe! Just wanted to let you know your sub is expiring soon… I'd hate to lose you 💔"}
+];
+
+// ═══════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════
+async function apiFetch(path, options = {}) {
+  const res = await fetch(API + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
+      ...options.headers
+    }
+  });
+  if (res.status === 401) {
+    logout();
+    throw new Error('Unauthorized');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || 'Request failed');
+  return data;
+}
+
+// ═══════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Please enter email and password'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    const data = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+    TOKEN = data.token || data.access_token;
+    localStorage.setItem('fd_token', TOKEN);
+    currentUser = data.user;
+    showApp();
+  } catch (err) {
+    errEl.textContent = err.message || 'Invalid email or password';
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+function logout() {
+  TOKEN = null;
+  localStorage.removeItem('fd_token');
+  if (pollingInterval) clearInterval(pollingInterval);
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('topbar').style.display = 'none';
+  document.getElementById('appShell').style.display = 'none';
+}
+
+async function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('appShell').style.display = 'flex';
+
+  // Load user info if not already loaded
+  if (!currentUser) {
+    try { currentUser = (await apiFetch('/auth/me')).user || await apiFetch('/auth/me'); } catch(e) {}
+  }
+
+  if (currentUser) {
+    const initials = (currentUser.name || currentUser.email || 'U').substring(0, 2).toUpperCase();
+    document.getElementById('userChip').textContent = initials;
+    document.getElementById('sidebarChip').textContent = initials;
+    document.getElementById('sidebarName').textContent = currentUser.name || currentUser.email;
+    document.getElementById('sidebarRole').textContent = currentUser.role || 'Agency Owner';
+  }
+
+  // Greeting
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  const name = currentUser?.name?.split(' ')[0] || '';
+  document.getElementById('dashGreeting').textContent = `${greet}${name ? ', ' + name : ''} 👋`;
+  document.getElementById('dashSub').textContent = new Date().toLocaleDateString('en-US', {weekday:'long',month:'long',day:'numeric'});
+
+  await loadAccounts();
+  startPolling();
+}
+
+// ═══════════════════════════════════════
+// ACCOUNTS
+// ═══════════════════════════════════════
+const GRADIENTS = [
+  'linear-gradient(135deg,#667eea,#764ba2)',
+  'linear-gradient(135deg,#f093fb,#f5576c)',
+  'linear-gradient(135deg,#4facfe,#00f2fe)',
+  'linear-gradient(135deg,#43e97b,#38f9d7)',
+  'linear-gradient(135deg,#f7971e,#ffd200)',
+  'linear-gradient(135deg,#a78bfa,#7c5cfc)',
+];
+
+function accountGradient(idx) { return GRADIENTS[idx % GRADIENTS.length]; }
+function accountInitial(acc) { return (acc.fanvue_username || acc.display_name || 'A').substring(0,1).toUpperCase(); }
+function accountName(acc) { return acc.display_name || acc.fanvue_username || 'Account'; }
+
+async function loadAccounts() {
+  try {
+    const data = await apiFetch('/accounts');
+    accounts = data.accounts || data || [];
+    renderDashboardAccounts();
+    renderAccountsPage();
+    renderModelStrip();
+    if (accounts.length > 0) {
+      await loadConversations(accounts[0].id);
+    }
+    updateDashStats();
+  } catch (err) {
+    toast('Failed to load accounts: ' + err.message);
+  }
+}
+
+function renderDashboardAccounts() {
+  const el = document.getElementById('dashAccountCards');
+  if (!accounts.length) {
+    el.innerHTML = `<div class="account-card" style="opacity:.6;cursor:default">
+      <div style="font-size:24px;margin-bottom:10px">🔗</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text2)">No accounts connected</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Connect your first Fanvue model</div>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;justify-content:center" onclick="openModal('connectModal')">Connect account</button>
+    </div>`;
+    return;
+  }
+  el.innerHTML = accounts.map((acc, i) => {
+    const convs = conversations[acc.id] || [];
+    const unread = convs.reduce((s, c) => s + (c.unread_count || 0), 0);
+    const grad = accountGradient(i);
+    const init = accountInitial(acc);
+    return `<div class="account-card" onclick="goToNav('message-pro');switchModelById('${acc.id}')">
+      <div class="account-avatar" style="background:${grad}">
+        ${init} <div class="account-avatar-status" style="background:${acc.is_active && !acc.needs_reconnect ? 'var(--green)' : 'var(--red)'}"></div>
+      </div>
+      <div class="account-name">${accountName(acc)}</div>
+      <div class="account-handle">@${acc.fanvue_username || '—'}</div>
+      <div class="account-stats">
+        <div class="account-stat"><div class="account-stat-label">Convos</div><div class="account-stat-value">${convs.length}</div></div>
+        <div class="account-stat"><div class="account-stat-label">Unread</div><div class="account-stat-value" style="color:${unread>0?'var(--accent2)':'var(--text3)'}">${unread}</div></div>
+        <div class="account-stat"><div class="account-stat-label">Status</div><div class="account-stat-value" style="font-size:11px;color:${acc.is_active&&!acc.needs_reconnect?'var(--green)':'var(--red)'}">${acc.needs_reconnect?'Reconnect':acc.is_active?'Active':'Inactive'}</div></div>
+        <div class="account-stat"><div class="account-stat-label">Sync</div><div class="account-stat-value" style="font-size:11px">Live</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAccountsPage() {
+  const el = document.getElementById('accountsPageGrid');
+  if (!accounts.length) {
+    el.innerHTML = `<div class="account-card" style="border-style:dashed;cursor:pointer;opacity:.6" onclick="openModal('connectModal')">
+      <div style="min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+        <div style="font-size:28px">＋</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text2)">Connect first account</div>
+      </div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = accounts.map((acc, i) => {
+    const grad = accountGradient(i);
+    const init = accountInitial(acc);
+    const active = acc.is_active && !acc.needs_reconnect;
+    const convs = conversations[acc.id] || [];
+    return `<div class="account-card">
+      <div class="flex-between" style="margin-bottom:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:${grad};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;position:relative">
+          ${init} <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:${active?'var(--green)':'var(--red)'};border:2px solid var(--s1)"></div>
+        </div>
+        <span class="badge ${active?'badge-green':'badge-red'}">● ${active?'Connected':'Needs reconnect'}</span>
+      </div>
+      <div class="account-name">${accountName(acc)}</div>
+      <div class="account-handle" style="margin-bottom:10px">@${acc.fanvue_username || '—'} · ID: ${acc.id.substring(0,8)}…</div>
+      <div class="account-stats">
+        <div class="account-stat"><div class="account-stat-label">Conversations</div><div class="account-stat-value">${convs.length}</div></div>
+        <div class="account-stat"><div class="account-stat-label">Unread</div><div class="account-stat-value">${convs.reduce((s,c)=>s+(c.unread_count||0),0)}</div></div>
+        <div class="account-stat"><div class="account-stat-label">Last Sync</div><div class="account-stat-value" style="font-size:11px">${acc.last_sync_at ? timeAgo(acc.last_sync_at) : 'Never'}</div></div>
+        <div class="account-stat"><div class="account-stat-label">Token</div><div class="account-stat-value" style="color:${active?'var(--green)':'var(--red)'};font-size:11px">${active?'Valid':'Expired'}</div></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="triggerSync('${acc.id}')">Sync now</button>
+      </div>
+    </div>`;
+  }).join('') + `<div class="account-card" style="border-style:dashed;cursor:pointer;opacity:.6" onclick="openModal('connectModal')">
+    <div style="min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px">
+      <div style="font-size:26px">＋</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text2)">Connect account</div>
+      <div style="font-size:11px;color:var(--text3)">Add another model</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// CONVERSATIONS
+// ═══════════════════════════════════════
+async function loadConversations(accountId) {
+  try {
+    const data = await apiFetch(`/conversations?account_id=${accountId}`);
+    conversations[accountId] = data.conversations || data || [];
+    // init tabs
+    if (!openTabs[accountId]) openTabs[accountId] = [];
+    if (!activeConv[accountId]) activeConv[accountId] = null;
+    if (accounts[currentAccountIdx]?.id === accountId) {
+      renderInbox();
+      renderModelStrip();
+    }
+    updateDashStats();
+    updateSyncStatus();
+  } catch (err) {
+    console.error('loadConversations error:', err);
+  }
+}
+
+function currentAccount() { return accounts[currentAccountIdx] || null; }
+
+function currentConversations() {
+  const acc = currentAccount();
+  if (!acc) return [];
+  return conversations[acc.id] || [];
+}
+
+async function loadMessages(convId) {
+  document.getElementById('chatThread').innerHTML = '<div class="chat-loading"><div class="spinner"></div> &nbsp;Loading…</div>';
+  try {
+    const data = await apiFetch(`/conversations/${convId}`);
+    const conv = data.conversation || data;
+    // mark as read
+    renderMessages(conv.messages || [], convId);
+    return conv;
+  } catch (err) {
+    document.getElementById('chatThread').innerHTML = `<div class="chat-empty-state"><div>Failed to load: ${err.message}</div></div>`;
+  }
+}
+
+function renderMessages(messages, convId) {
+  const thread = document.getElementById('chatThread');
+  const conv = currentConversations().find(c => c.id === convId);
+  const acc = currentAccount();
+
+  if (!messages.length) {
+    thread.innerHTML = '<div class="chat-empty-state"><div class="icon">💬</div><div style="font-size:13px">No messages yet</div></div>';
+    return;
+  }
+
+  let html = '';
+  let lastDate = null;
+  messages.forEach(m => {
+    const d = new Date(m.sent_at || m.created_at);
+    const dateStr = d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+    if (dateStr !== lastDate) {
+      html += `<div class="date-sep"><span>${dateStr}</span></div>`;
+      lastDate = dateStr;
+    }
+    const timeStr = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const isOut = m.direction === 'outbound';
+    const init = isOut ? (acc ? accountInitial(acc) : 'A') : (conv?.fan?.display_name || conv?.fan?.username || 'F').substring(0,1).toUpperCase();
+    const col = isOut ? 'var(--accent)' : (accountGradient(currentAccountIdx));
+    html += `<div class="msg-row ${isOut ? 'out' : 'in'}">
+      <div class="msg-av" style="background:${col}">${init}</div>
+      <div class="msg-wrap">
+        <div class="msg-bubble">${escHtml(m.content || '')}</div>
+        <div class="msg-meta">${timeStr}</div>
+      </div>
+    </div>`;
+  });
+
+  thread.innerHTML = html;
+  thread.scrollTop = thread.scrollHeight;
+}
+
+// ═══════════════════════════════════════
+// INBOX RENDERING
+// ═══════════════════════════════════════
+function renderInbox(search = '') {
+  const list = document.getElementById('inboxList');
+  if (!list) return;
+
+  const acc = currentAccount();
+  if (!acc) {
+    list.innerHTML = '<div style="padding:20px;font-size:12px;color:var(--text3);text-align:center">No account selected</div>';
+    return;
+  }
+
+  let convs = currentConversations();
+  if (currentFilter === 'unread') convs = convs.filter(c => c.unread_count > 0);
+  if (search) convs = convs.filter(c => {
+    const name = (c.fan?.display_name || c.fan?.username || '').toLowerCase();
+    return name.includes(search.toLowerCase());
+  });
+
+  if (!convs.length) {
+    list.innerHTML = '<div style="padding:20px;font-size:12px;color:var(--text3);text-align:center">No conversations</div>';
+    return;
+  }
+
+  const activeId = activeConv[acc.id];
+  list.innerHTML = convs.map(c => {
+    const fan = c.fan || {};
+    const name = fan.display_name || fan.username || 'Fan';
+    const init = name.substring(0,1).toUpperCase();
+    const col = accountGradient(Math.abs(name.charCodeAt(0) - 65) % GRADIENTS.length);
+    const time = c.last_message_at ? timeAgo(c.last_message_at) : '';
+    const preview = c.last_message_preview || '';
+    const unread = c.unread_count || 0;
+    return `<div class="convo-row ${activeId === c.id ? 'active' : ''}" onclick="openConv('${c.id}')">
+      <div class="cr-top">
+        <div class="cr-av" style="background:${col}">${init}</div>
+        <div class="cr-name">${escHtml(name)}</div>
+        <div class="cr-time">${time}</div>
+        ${unread > 0 ? `<div class="cr-unread">${unread}</div>` : ''}
+      </div>
+      <div class="cr-preview">${escHtml(preview)}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterInbox(v) { renderInbox(v); }
+function setIF(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.ifilter').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderInbox();
+}
+
+// ═══════════════════════════════════════
+// MODEL STRIP / TABS
+// ═══════════════════════════════════════
+function renderModelStrip() {
+  const strip = document.getElementById('modelStrip');
+  if (!accounts.length) {
+    strip.innerHTML = '<div style="font-size:11px;color:var(--text3)">No accounts — connect one above</div>';
+    return;
+  }
+  strip.innerHTML = accounts.map((acc, i) => {
+    const convs = conversations[acc.id] || [];
+    const unread = convs.reduce((s,c) => s + (c.unread_count||0), 0);
+    const grad = accountGradient(i);
+    const init = accountInitial(acc);
+    return `<div class="model-tab ${i === currentAccountIdx ? 'active' : ''}" onclick="switchModel(${i},this)">
+      <div class="model-tab-av" style="background:${grad}">${init}</div>
+      ${accountName(acc)}
+      ${unread > 0 ? `<span class="model-tab-unread">${unread}</span>` : ''}
+    </div>`;
+  }).join('') + `<div class="add-acct-btn" title="Connect account" onclick="openModal('connectModal')">+</div>`;
+}
+
+async function switchModel(idx, el) {
+  currentAccountIdx = idx;
+  document.querySelectorAll('.model-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const acc = currentAccount();
+  if (acc && !conversations[acc.id]) {
+    await loadConversations(acc.id);
+  }
+  renderInbox();
+  renderSubTabs();
+  const aId = activeConv[acc?.id];
+  if (aId) { loadCRM(aId); }
+  else { clearCRM(); }
+}
+
+function switchModelById(accId) {
+  const idx = accounts.findIndex(a => a.id === accId);
+  if (idx >= 0) switchModel(idx, null);
+  renderModelStrip();
+}
+
+// ═══════════════════════════════════════
+// OPEN CONVERSATION
+// ═══════════════════════════════════════
+async function openConv(convId) {
+  const acc = currentAccount();
+  if (!acc) return;
+
+  if (!openTabs[acc.id]) openTabs[acc.id] = [];
+  if (!openTabs[acc.id].includes(convId)) openTabs[acc.id].push(convId);
+  activeConv[acc.id] = convId;
+  currentConvId = convId;
+
+  renderInbox();
+  renderSubTabs();
+  loadCRM(convId);
+  await loadMessages(convId);
+
+  // Mark as read locally
+  const conv = currentConversations().find(c => c.id === convId);
+  if (conv) { conv.unread_count = 0; conv.is_unread = false; }
+  updateDashStats();
+  renderModelStrip();
+}
+
+// ═══════════════════════════════════════
+// SUB-TABS
+// ═══════════════════════════════════════
+function renderSubTabs() {
+  const c = document.getElementById('subTabs');
+  if (!c) return;
+  const acc = currentAccount();
+  if (!acc) { c.innerHTML = '<span class="stab-label">Open:</span>'; return; }
+  const tabs = openTabs[acc.id] || [];
+  let h = '<span class="stab-label">Open:</span>';
+  if (!tabs.length) h += '<span style="font-size:10px;color:var(--text3)">Click a fan to open</span>';
+  else tabs.forEach(id => {
+    const conv = currentConversations().find(c => c.id === id);
+    if (!conv) return;
+    const name = conv.fan?.display_name || conv.fan?.username || 'Fan';
+    const isActive = activeConv[acc.id] === id;
+    h += `<div class="sub-tab ${isActive ? 'active' : ''}" onclick="switchSubTab('${id}')">
+      ${(conv.unread_count||0) > 0 ? '<div class="stab-unread"></div>' : ''}
+      ${escHtml(name)}
+      <span class="stab-close" onclick="closeSubTab(event,'${id}')">✕</span>
+    </div>`;
+  });
+  c.innerHTML = h;
+}
+
+function switchSubTab(id) {
+  const acc = currentAccount();
+  if (!acc) return;
+  activeConv[acc.id] = id;
+  currentConvId = id;
+  renderSubTabs();
+  renderInbox();
+  loadMessages(id);
+  loadCRM(id);
+}
+
+function closeSubTab(e, id) {
+  e.stopPropagation();
+  const acc = currentAccount();
+  if (!acc) return;
+  openTabs[acc.id] = (openTabs[acc.id] || []).filter(x => x !== id);
+  if (activeConv[acc.id] === id) {
+    const rem = openTabs[acc.id];
+    if (rem.length) switchSubTab(rem[rem.length - 1]);
+    else { activeConv[acc.id] = null; currentConvId = null; clearChat(); }
+  }
+  renderSubTabs(); renderInbox();
+}
+
+function clearChat() {
+  document.getElementById('chatThread').innerHTML = '<div class="chat-empty-state"><div class="icon">💬</div><div style="font-size:13px">Select a conversation</div></div>';
+  clearCRM();
+}
+
+// ═══════════════════════════════════════
+// CRM PANEL
+// ═══════════════════════════════════════
+function loadCRM(convId) {
+  const acc = currentAccount();
+  if (!acc) return;
+  const conv = currentConversations().find(c => c.id === convId);
+  if (!conv) return clearCRM();
+
+  const fan = conv.fan || {};
+  const name = fan.display_name || fan.username || 'Fan';
+  const init = name.substring(0,1).toUpperCase();
+  const col = accountGradient(Math.abs(name.charCodeAt(0) - 65) % GRADIENTS.length);
+
+  document.getElementById('crmAv').textContent = init;
+  document.getElementById('crmAv').style.background = col;
+  document.getElementById('crmName').textContent = name;
+  document.getElementById('crmHandle').textContent = fan.username ? '@' + fan.username : '—';
+  document.getElementById('crmUnread').textContent = conv.unread_count || 0;
+  document.getElementById('crmLastMsg').textContent = conv.last_message_at ? timeAgo(conv.last_message_at) : '—';
+  document.getElementById('crmStatus').textContent = conv.status || 'open';
+
+  const tags = fan.tags || [];
+  document.getElementById('crmTags').innerHTML = tags.map(t =>
+    `<div class="tag-chip-sm">${escHtml(t)}<span class="tag-rm" onclick="rmTag('${convId}','${t}')">✕</span></div>`
+  ).join('');
+
+  document.getElementById('crmNotes').value = fan.notes || '';
+}
+
+function clearCRM() {
+  ['crmName','crmHandle','crmUnread','crmLastMsg','crmStatus'].forEach(k => {
+    const el = document.getElementById(k);
+    if (el) el.textContent = '—';
+  });
+  document.getElementById('crmAv').textContent = '?';
+  document.getElementById('crmAv').style.background = 'var(--s4)';
+  document.getElementById('crmTags').innerHTML = '';
+  document.getElementById('crmNotes').value = '';
+}
+
+async function addTag() {
+  const inp = document.getElementById('tagIn');
+  const tag = inp.value.trim().toLowerCase();
+  if (!tag || !currentConvId) return;
+  const acc = currentAccount();
+  if (!acc) return;
+  const conv = currentConversations().find(c => c.id === currentConvId);
+  if (!conv?.fan_id) return;
+  try {
+    await apiFetch(`/fans/${conv.fan_id}/tags`, { method: 'POST', body: JSON.stringify({ tag }) });
+    if (!conv.fan) conv.fan = {};
+    if (!conv.fan.tags) conv.fan.tags = [];
+    conv.fan.tags.push(tag);
+    loadCRM(currentConvId);
+    inp.value = '';
+    toast('Tag added');
+  } catch (e) { toast('Failed to add tag'); }
+}
+
+async function rmTag(convId, tag) {
+  const conv = currentConversations().find(c => c.id === convId);
+  if (!conv?.fan_id) return;
+  try {
+    await apiFetch(`/fans/${conv.fan_id}/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+    if (conv.fan?.tags) conv.fan.tags = conv.fan.tags.filter(t => t !== tag);
+    loadCRM(convId);
+    toast('Tag removed');
+  } catch (e) { toast('Failed to remove tag'); }
+}
+
+async function saveNote() {
+  if (!currentConvId) return;
+  const conv = currentConversations().find(c => c.id === currentConvId);
+  if (!conv?.fan_id) return;
+  const note = document.getElementById('crmNotes').value;
+  try {
+    await apiFetch(`/fans/${conv.fan_id}/notes`, { method: 'POST', body: JSON.stringify({ note }) });
+    toast('Note saved');
+  } catch (e) { toast('Failed to save note'); }
+}
+
+// ═══════════════════════════════════════
+// SEND MESSAGE
+// ═══════════════════════════════════════
+async function sendMsg() {
+  const ta = document.getElementById('composerTa');
+  const content = ta.value.trim();
+  if (!content || !currentConvId) return;
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+
+  try {
+    const body = { content };
+    if (ppvOn) {
+      body.is_ppv = true;
+      body.ppv_price = parseFloat(document.getElementById('ppvPrice').value) || 40;
+    }
+    const data = await apiFetch(`/conversations/${currentConvId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+
+    // Append optimistically to the thread
+    const thread = document.getElementById('chatThread');
+    const acc = currentAccount();
+    const init = acc ? accountInitial(acc) : 'A';
+    const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const msgEl = document.createElement('div');
+    msgEl.className = 'msg-row out';
+    msgEl.innerHTML = `
+      <div class="msg-av" style="background:var(--accent)">${init}</div>
+      <div class="msg-wrap">
+        <div class="msg-bubble">${escHtml(content)}</div>
+        <div class="msg-meta">${now} · Sent</div>
+      </div>`;
+    thread.appendChild(msgEl);
+    thread.scrollTop = thread.scrollHeight;
+
+    // Update preview in inbox
+    const conv = currentConversations().find(c => c.id === currentConvId);
+    if (conv) { conv.last_message_preview = content; conv.last_message_at = new Date().toISOString(); }
+
+    ta.value = ''; ta.style.height = 'auto';
+    document.getElementById('charCt').textContent = '0 / 500';
+    if (ppvOn) { togglePPV(); toast(`🔒 PPV sent at $${body.ppv_price}`); }
+    renderInbox();
+  } catch (err) {
+    toast('Failed to send: ' + err.message);
+  }
+
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════
+// SNIPPETS
+// ═══════════════════════════════════════
+function renderSnips(q = '') {
+  const grid = document.getElementById('snipGrid');
+  if (!grid) return;
+  const filtered = SNIPPETS.filter(s => !q || s.title.toLowerCase().includes(q.toLowerCase()));
+  grid.innerHTML = filtered.map(s =>
+    `<div class="snip-chip ${s.ppv ? 'ppv' : ''}" onclick="insertSnip(${s.id})">${s.ppv ? '🔒 ' : ''}${s.title}</div>`
+  ).join('');
+}
+
+function toggleSnips() {
+  snipsOpen = !snipsOpen;
+  document.getElementById('snipPanel').classList.toggle('open', snipsOpen);
+  document.getElementById('snipBtn').classList.toggle('on', snipsOpen);
+  if (snipsOpen) renderSnips();
+}
+
+function filterSnips(v) { renderSnips(v); }
+
+function insertSnip(id) {
+  const s = SNIPPETS.find(x => x.id === id);
+  if (!s) return;
+  const conv = currentConvId ? currentConversations().find(c => c.id === currentConvId) : null;
+  const fanName = conv?.fan?.display_name || conv?.fan?.username || 'babe';
+  const resolved = s.body.replace(/{{fan_name}}/g, fanName);
+  const ta = document.getElementById('composerTa');
+  ta.value = resolved; onTaInput(ta);
+  if (s.ppv && !ppvOn) togglePPV();
+  toggleSnips(); ta.focus();
+}
+
+// ═══════════════════════════════════════
+// PPV
+// ═══════════════════════════════════════
+function togglePPV() {
+  ppvOn = !ppvOn;
+  document.getElementById('ppvBtn').classList.toggle('ppv-on', ppvOn);
+  document.getElementById('ppvPrice').style.display = ppvOn ? 'block' : 'none';
+  document.getElementById('sendBtn').style.background = ppvOn ? 'var(--yellow)' : '';
+  document.getElementById('composerTa').placeholder = ppvOn ? 'Type your PPV message… content will be locked 🔒' : 'Type a message…';
+  if (ppvOn) document.getElementById('ppvPrice').focus();
+}
+
+// ═══════════════════════════════════════
+// COMPOSER
+// ═══════════════════════════════════════
+function onTaInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  const ct = document.getElementById('charCt');
+  if (ct) ct.textContent = `${el.value.length} / 500`;
+}
+
+function onTaKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  if (e.key === '/' && e.target.value === '') toggleSnips();
+}
+
+// ═══════════════════════════════════════
+// SYNC
+// ═══════════════════════════════════════
+async function triggerSync(accountId) {
+  try {
+    await apiFetch(`/conversations/sync/${accountId}`, { method: 'POST' });
+    toast('Sync triggered!');
+    setTimeout(() => loadConversations(accountId), 3000);
+  } catch (e) { toast('Sync failed: ' + e.message); }
+}
+
+function startPolling() {
+  // Reload conversations every 30 seconds
+  pollingInterval = setInterval(async () => {
+    for (const acc of accounts) {
+      await loadConversations(acc.id);
+    }
+  }, 30000);
+}
+
+function updateSyncStatus() {
+  const allConvs = Object.values(conversations).flat();
+  const totalUnread = allConvs.reduce((s, c) => s + (c.unread_count || 0), 0);
+  document.getElementById('syncStatusText').textContent = totalUnread > 0 ? `${totalUnread} unread` : 'All caught up';
+  document.getElementById('totalUnreadBadge').textContent = totalUnread;
+  document.getElementById('totalUnreadBadge').style.display = totalUnread > 0 ? '' : 'none';
+}
+
+function updateDashStats() {
+  const allConvs = Object.values(conversations).flat();
+  const totalUnread = allConvs.reduce((s, c) => s + (c.unread_count || 0), 0);
+  document.getElementById('dStatAccounts').textContent = accounts.length;
+  document.getElementById('dStatConvos').textContent = allConvs.length;
+  document.getElementById('dStatUnread').textContent = totalUnread;
+  document.getElementById('accountsCountBadge').textContent = accounts.length;
+
+  // Last sync time
+  const syncTimes = accounts.map(a => a.last_sync_at).filter(Boolean);
+  if (syncTimes.length) {
+    const latest = new Date(Math.max(...syncTimes.map(t => new Date(t))));
+    document.getElementById('dStatSync').textContent = timeAgo(latest.toISOString());
+  }
+}
+
+// ═══════════════════════════════════════
+// OAUTH
+// ═══════════════════════════════════════
+async function startOAuth() {
+  closeModal('connectModal');
+  try {
+    const label = document.getElementById('connectLabel')?.value || 'Unnamed Model';
+    const res = await fetch(`${API}/oauth/connect?label=${encodeURIComponent(label)}`, {
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('fd_token') }
+    });
+    const data = await res.json();
+    if (data.authUrl) {
+      window.location.href = data.authUrl;
+    } else {
+      showToast('OAuth error: ' + (data.error || 'unknown'), 'error');
+    }
+  } catch (e) {
+    showToast('Failed to start OAuth: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════
+const pageTitles = {
+  dashboard: '<strong>Dashboard</strong>',
+  'message-pro': '<strong>Message Pro</strong> — Unified Inbox',
+  accounts: '<strong>Accounts</strong> — Connected Models'
+};
+
+function goTo(pageId, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('pageTitle').innerHTML = pageTitles[pageId] || '';
+  if (pageId === 'message-pro') { renderInbox(); renderSubTabs(); renderModelStrip(); }
+  if (pageId === 'accounts') { renderAccountsPage(); }
+  if (pageId === 'dashboard') { renderDashboardAccounts(); updateDashStats(); }
+}
+
+function goToNav(pageId) {
+  const navEl = document.querySelector(`[onclick="goTo('${pageId}',this)"]`);
+  goTo(pageId, navEl);
+}
+
+// ═══════════════════════════════════════
+// MODAL / TOAST
+// ═══════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;color:#fff;background:' + (type === 'error' ? 'var(--red)' : 'var(--green)');
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+let toastT;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.opacity = '1';
+  clearTimeout(toastT); toastT = setTimeout(() => el.style.opacity = '0', 2500);
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff/86400) + 'd ago';
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+if (TOKEN) {
+  showApp();
+} else {
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// Handle OAuth callback
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('token')) {
+  TOKEN = urlParams.get('token');
+  localStorage.setItem('fd_token', TOKEN);
+  window.history.replaceState({}, '', window.location.pathname);
+  showApp();
+}
+</script>
+</body>
+</html>

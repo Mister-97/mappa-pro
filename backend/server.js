@@ -51,8 +51,9 @@ app.use('/api/revenue', revenueRoutes);
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
 // Serve static frontend
-app.use(express.static('.'));
-app.get('/', (req, res) => res.sendFile('flowdesk-complete.html', { root: '.' }));
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html')));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
