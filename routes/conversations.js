@@ -58,13 +58,9 @@ router.get('/', authenticate, async (req, res, next) => {
     if (filter === 'follow_up') query = query.eq('needs_follow_up', true);
     if (filter === 'mine') query = query.eq('assigned_chatter_id', req.user.id);
 
-    // Sorting — pinned always floats to top, then by last_message_at desc
-    const sortMap = {
-      last_message: 'last_message_at',
-      pinned: 'is_pinned',
-    };
+    // Pinned always float to top, then newest message first
     query = query.order('is_pinned', { ascending: false });
-    query = query.order(sortMap[sort] || 'last_message_at', { ascending: false });
+    query = query.order('last_message_at', { ascending: false, nullsFirst: false });
 
     // Pagination
     const from = (page - 1) * limit;
@@ -89,7 +85,7 @@ router.get('/', authenticate, async (req, res, next) => {
 
 /**
  * GET /api/conversations/:conversationId
- * Single conversation with messages
+ * Single conversation with messages — always chronological (oldest first)
  */
 router.get('/:conversationId', authenticate, async (req, res, next) => {
   try {
@@ -112,7 +108,8 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
       .update({ is_unread: false, unread_count: 0 })
       .eq('id', req.params.conversationId);
 
-    // Get messages — ascending so oldest is at top, newest at bottom (standard chat UI)
+    // Messages — oldest at top, newest at bottom (chronological chat order)
+    // Sort by sent_at ASC, fall back to created_at ASC for messages without a sent_at
     const { data: messages } = await supabase
       .from('messages')
       .select(`
@@ -121,8 +118,9 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
         sent_by_user:users(id, name), sent_by_automation, script_run_id
       `)
       .eq('conversation_id', req.params.conversationId)
-      .order('sent_at', { ascending: true })
-      .limit(100);
+      .order('sent_at', { ascending: true, nullsFirst: false })
+      .order('id', { ascending: true })
+      .limit(200);
 
     // Get active script run if any
     const { data: activeRun } = await supabase
@@ -140,7 +138,6 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
 
 /**
  * POST /api/conversations/:conversationId/lock
- * Soft-lock a conversation (collision prevention)
  */
 router.post('/:conversationId/lock', authenticate, async (req, res, next) => {
   try {
@@ -182,7 +179,6 @@ router.post('/:conversationId/lock', authenticate, async (req, res, next) => {
 
 /**
  * DELETE /api/conversations/:conversationId/lock
- * Release lock
  */
 router.delete('/:conversationId/lock', authenticate, async (req, res, next) => {
   try {
@@ -200,7 +196,6 @@ router.delete('/:conversationId/lock', authenticate, async (req, res, next) => {
 
 /**
  * PATCH /api/conversations/:conversationId
- * Update conversation (assign, pin, follow-up, close)
  */
 router.patch('/:conversationId', authenticate, async (req, res, next) => {
   try {
@@ -228,7 +223,6 @@ router.patch('/:conversationId', authenticate, async (req, res, next) => {
 
 /**
  * POST /api/conversations/:conversationId/messages
- * Send a message to a fan
  */
 router.post('/:conversationId/messages', authenticate, async (req, res, next) => {
   try {
@@ -238,7 +232,6 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
       return res.status(400).json({ error: 'content or media required' });
     }
 
-    // Get conversation + account + fan's fanvue_fan_id (= the userUuid for the API)
     const { data: conv, error: convError } = await supabase
       .from('conversations')
       .select('*, account:connected_accounts(*), fan:fans(fanvue_fan_id)')
@@ -250,7 +243,6 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
 
     const fanUserUuid = conv.fan?.fanvue_fan_id;
 
-    // Send via Fanvue API
     let fanvueMessageId = null;
     try {
       const fanvueResponse = await fanvueApi.sendMessage(
@@ -267,7 +259,6 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
       console.error('Fanvue send error:', apiErr.message);
     }
 
-    // Store message locally
     const msgId = uuidv4();
     const { data: message, error: msgError } = await supabase
       .from('messages')
@@ -291,7 +282,6 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
 
     if (msgError) throw msgError;
 
-    // Update conversation state
     await supabase
       .from('conversations')
       .update({
@@ -312,7 +302,6 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
 
 /**
  * POST /api/conversations/sync/:accountId
- * Trigger inbox sync for an account (polls Fanvue API)
  */
 router.post('/sync/:accountId', authenticate, async (req, res, next) => {
   try {
@@ -346,7 +335,8 @@ async function syncInbox(account) {
         updated_at: new Date().toISOString()
       });
 
-    const response = await fanvueApi.getChats(account, 1, 50);
+    // Fetch chats sorted by most recent message
+    const response = await fanvueApi.getChats(account, 1, 50, null, 'most_recent_messages');
 
     if (!response?.data?.length) {
       await supabase
@@ -365,6 +355,12 @@ async function syncInbox(account) {
       const fan = chat.user;
       const lastMsg = chat.lastMessage;
 
+      // Use the most reliable timestamp available
+      const lastMessageAt = chat.lastMessageAt ||
+        lastMsg?.createdAt ||
+        lastMsg?.sentAt ||
+        new Date().toISOString();
+
       const { data: fanRow } = await supabase
         .from('fans')
         .upsert({
@@ -374,8 +370,8 @@ async function syncInbox(account) {
           username: fan.username,
           display_name: fan.displayName,
           avatar_url: fan.profileImageUrl,
-          last_message_at: chat.lastMessageAt,
-          last_active_at: chat.lastMessageAt,
+          last_message_at: lastMessageAt,
+          last_active_at: lastMessageAt,
           updated_at: new Date().toISOString()
         }, { onConflict: 'account_id,fanvue_fan_id' })
         .select('id')
@@ -392,7 +388,7 @@ async function syncInbox(account) {
           fanvue_thread_id: fan.uuid,
           is_unread: !chat.isRead,
           unread_count: chat.unreadMessagesCount || 0,
-          last_message_at: chat.lastMessageAt,
+          last_message_at: lastMessageAt,
           last_message_preview: lastMsg?.text?.substring(0, 100) || (lastMsg?.uuid ? '[Media]' : null),
           last_message_from: lastMsg?.sender === 'creator' ? 'model' : 'fan',
           status: 'open',

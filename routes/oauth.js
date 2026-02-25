@@ -3,7 +3,6 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const supabase = require('../config/supabase');
-const { authenticate } = require('../middleware/auth');
 const { encrypt } = require('../utils/encryption');
 
 const router = express.Router();
@@ -17,10 +16,11 @@ const pkceStore = new Map();
 
 /**
  * GET /api/oauth/connect
- * Initiate Fanvue OAuth flow for a creator account
+ * Initiate Fanvue OAuth flow for a creator account.
+ * No auth required — works without login for now.
  * Query param: ?label=ModelName (optional display name)
  */
-router.get('/connect', authenticate, (req, res) => {
+router.get('/connect', (req, res) => {
   const { label } = req.query;
 
   const codeVerifier = crypto.randomBytes(32).toString('base64url');
@@ -33,9 +33,9 @@ router.get('/connect', authenticate, (req, res) => {
 
   pkceStore.set(state, {
     codeVerifier,
-    userId: req.user.id,
-    organizationId: req.user.organization_id,
-    label: label || 'Unnamed Model',
+    userId: process.env.DEFAULT_USER_ID || 'dev-user',
+    organizationId: process.env.DEFAULT_ORG_ID || 'dev-org',
+    label: label || 'mumu',
     expiresAt: Date.now() + 10 * 60 * 1000
   });
 
@@ -70,7 +70,7 @@ router.get('/callback', async (req, res, next) => {
     }
     pkceStore.delete(state);
 
-    // Exchange code for tokens — Fanvue uses client_secret_basic (credentials in Authorization header)
+    // Exchange code for tokens
     const credentials = Buffer.from(
       `${process.env.FANVUE_CLIENT_ID}:${process.env.FANVUE_CLIENT_SECRET}`
     ).toString('base64');
@@ -93,7 +93,7 @@ router.get('/callback', async (req, res, next) => {
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    // Fetch creator profile — correct endpoint + API version header
+    // Fetch creator profile
     const profileResponse = await axios.get(`${FANVUE_API_BASE}/users/me`, {
       headers: {
         Authorization: `Bearer ${access_token}`,
@@ -103,7 +103,7 @@ router.get('/callback', async (req, res, next) => {
 
     const profile = profileResponse.data;
 
-    // Check if this Fanvue account is already connected
+    // Check if already connected
     const { data: existing } = await supabase
       .from('connected_accounts')
       .select('id')
@@ -148,6 +148,8 @@ router.get('/callback', async (req, res, next) => {
 /**
  * DELETE /api/oauth/disconnect/:accountId
  */
+const { authenticate } = require('../middleware/auth');
+
 router.delete('/disconnect/:accountId', authenticate, async (req, res, next) => {
   try {
     const { accountId } = req.params;
