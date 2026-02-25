@@ -90,12 +90,13 @@ async function getProfile(account) {
 
 /**
  * Get creator stats — uses /users/me which includes subscriber/follower/content counts
+ * NOTE: subscriber/follower counts are nested under profile.fanCounts per API spec
  */
 async function getStats(account) {
   const profile = await fanvueRequest(account, 'GET', '/users/me');
   return {
-    subscriberCount: profile?.subscribersCount || 0,
-    followerCount: profile?.followersCount || 0,
+    subscriberCount: profile?.fanCounts?.subscribersCount || 0,
+    followerCount: profile?.fanCounts?.followersCount || 0,
     imageCount: profile?.imageCount || 0,
     videoCount: profile?.videoCount || 0,
     postCount: profile?.postCount || 0,
