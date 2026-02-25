@@ -1,1 +1,1056 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowDesk — OFM Command Center</title>
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #141417;
+    --bg3: #1a1a1f;
+    --border: #2a2a35;
+    --accent: #a855f7;
+    --accent2: #7c3aed;
+    --accent-dim: rgba(168,85,247,0.15);
+    --text: #f0f0f5;
+    --text2: #9090a0;
+    --text3: #606070;
+    --green: #22c55e;
+    --red: #ef4444;
+    --orange: #f97316;
+    --blue: #3b82f6;
+    --sidebar-w: 220px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; height: 100vh; overflow: hidden; }
+
+  /* ── AUTH ── */
+  #auth-screen {
+    display: flex; align-items: center; justify-content: center;
+    height: 100vh; background: var(--bg);
+  }
+  .auth-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    padding: 40px; width: 400px; display: flex; flex-direction: column; gap: 20px;
+  }
+  .auth-logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .auth-logo span { color: var(--accent); }
+  .auth-card h2 { font-size: 18px; font-weight: 600; color: var(--text); }
+  .auth-card p { color: var(--text2); font-size: 13px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; color: var(--text2); font-weight: 500; }
+  .field input {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; color: var(--text); font-size: 14px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-err { color: var(--red); font-size: 13px; text-align: center; }
+  .auth-toggle { color: var(--text2); font-size: 13px; text-align: center; }
+  .auth-toggle a { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .auth-toggle a:hover { text-decoration: underline; }
+
+  /* ── APP SHELL ── */
+  #app { display: none; height: 100vh; flex-direction: row; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w); background: var(--bg2); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 20px 16px 16px; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sidebar-logo { font-size: 16px; font-weight: 700; }
+  .sidebar-logo span { color: var(--accent); }
+  .sidebar-org { font-size: 11px; color: var(--text3); }
+  .nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px;
+    color: var(--text2); cursor: pointer; transition: all 0.15s; font-size: 13px;
+    border: none; background: transparent; text-align: left; width: 100%;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
+  .nav-item .icon { font-size: 15px; width: 18px; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; background: var(--accent); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+  }
+  .sidebar-bottom {
+    padding: 12px 8px; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .user-info {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--accent-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0;
+  }
+  .user-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .user-role { font-size: 10px; color: var(--text3); }
+  .btn-logout {
+    background: transparent; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; color: var(--text2); cursor: pointer; font-size: 12px;
+    transition: all 0.15s; text-align: center;
+  }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── MAIN ── */
+  .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* ── PANELS ── */
+  .panel { display: none; flex: 1; overflow: auto; padding: 24px; flex-direction: column; gap: 20px; }
+  .panel.active { display: flex; }
+
+  .panel-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .panel-subtitle { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+  /* ── CARDS ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--text); }
+  .stat-sub { font-size: 12px; color: var(--text2); }
+  .stat-up { color: var(--green); }
+  .stat-down { color: var(--red); }
+
+  .card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 13px; font-weight: 600; }
+  .card-body { padding: 16px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 10px 12px; font-size: 11px; color: var(--text2); font-weight: 500;
+    text-align: left; border-bottom: 1px solid var(--border);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  td { padding: 12px 12px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge {
+    display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 500;
+  }
+  .badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-orange { background: rgba(249,115,22,0.15); color: var(--orange); }
+  .badge-purple { background: var(--accent-dim); color: var(--accent); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .badge-gray { background: rgba(144,144,160,0.15); color: var(--text2); }
+
+  /* ── INBOX ── */
+  #panel-inbox { flex-direction: row; padding: 0; gap: 0; overflow: hidden; }
+
+  .inbox-sidebar {
+    width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    background: var(--bg2); flex-shrink: 0;
+  }
+  .inbox-header { padding: 16px; border-bottom: 1px solid var(--border); }
+  .inbox-header h2 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+  .inbox-search {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; color: var(--text); font-size: 13px; outline: none;
+  }
+  .inbox-search:focus { border-color: var(--accent); }
+  .inbox-filters {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 5px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--text2); font-size: 11px; cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .inbox-list { overflow-y: auto; flex: 1; }
+  .conv-item {
+    padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer;
+    transition: background 0.1s; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .conv-item:hover { background: var(--bg3); }
+  .conv-item.active { background: var(--accent-dim); }
+  .conv-avatar {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--bg3);
+    object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--text2); overflow: hidden;
+  }
+  .conv-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .conv-info { flex: 1; min-width: 0; }
+  .conv-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conv-preview { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .conv-time { font-size: 11px; color: var(--text3); white-space: nowrap; margin-left: 6px; }
+  .unread-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .conv-item.unread .conv-name { color: var(--accent); }
+
+  .convo-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .convo-topbar {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .convo-fan-name { font-size: 15px; font-weight: 700; }
+  .convo-fan-meta { font-size: 12px; color: var(--text2); }
+  .convo-msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 72%; display: flex; flex-direction: column; gap: 2px; }
+  .msg.outbound { align-self: flex-end; align-items: flex-end; }
+  .msg.inbound { align-self: flex-start; align-items: flex-start; }
+  .msg-bubble {
+    padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5;
+  }
+  .msg.outbound .msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.inbound .msg-bubble { background: var(--bg3); color: var(--text); border-bottom-left-radius: 4px; }
+  .msg-time { font-size: 10px; color: var(--text3); padding: 0 4px; }
+  .convo-input-wrap {
+    padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0;
+  }
+  .convo-input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; color: var(--text); font-size: 13px; outline: none; resize: none;
+    font-family: inherit; max-height: 120px;
+  }
+  .convo-input:focus { border-color: var(--accent); }
+  .btn-send {
+    background: var(--accent); border: none; border-radius: 10px; padding: 10px 16px;
+    color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    align-self: flex-end;
+  }
+  .btn-send:hover { background: var(--accent2); }
+  .convo-empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--text3); gap: 10px;
+  }
+  .convo-empty .icon { font-size: 40px; }
+
+  /* ── ACCOUNT SELECTOR ── */
+  .acct-select-wrap { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .acct-select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; color: var(--text); font-size: 13px; cursor: pointer; outline: none;
+  }
+  .acct-select:focus { border-color: var(--accent); }
+
+  /* ── LOADING / EMPTY ── */
+  .loading { color: var(--text3); font-size: 13px; padding: 30px; text-align: center; }
+  .empty { color: var(--text3); font-size: 13px; text-align: center; padding: 40px 20px; }
+
+  /* ── TOASTS ── */
+  #toast-wrap {
+    position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column;
+    gap: 8px; z-index: 9999; pointer-events: none;
+  }
+  .toast {
+    padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideIn 0.2s ease;
+    pointer-events: all;
+  }
+  .toast-success { background: #1a3d2b; border: 1px solid var(--green); color: var(--green); }
+  .toast-error { background: #3d1a1a; border: 1px solid var(--red); color: var(--red); }
+  .toast-info { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── MISC ── */
+  .btn-sm {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 12px; color: var(--text2); font-size: 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-sm.primary:hover { background: var(--accent2); }
+  .flex-row { display: flex; gap: 10px; align-items: center; }
+  .scroll-y { overflow-y: auto; }
+  input[type="text"], input[type="email"], input[type="password"], select, textarea {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; color: var(--text); font-size: 13px; outline: none; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ─── AUTH ─── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">Flow<span>Desk</span></div>
+    <div>
+      <h2 id="auth-title">Welcome back</h2>
+      <p style="margin-top:4px">Sign in to your agency dashboard</p>
+    </div>
+    <div id="signup-fields" style="display:none; flex-direction:column; gap:14px;">
+      <div class="field"><label>Full Name</label><input id="f-name" type="text" placeholder="Your name" /></div>
+      <div class="field"><label>Agency Name</label><input id="f-agency" type="text" placeholder="Your agency name" /></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="field"><label>Email</label><input id="f-email" type="email" placeholder="you@agency.com" /></div>
+      <div class="field"><label>Password</label><input id="f-pass" type="password" placeholder="••••••••" /></div>
+    </div>
+    <div id="auth-err" class="auth-err" style="display:none"></div>
+    <button class="btn-primary" id="auth-btn" onclick="authSubmit()">Sign In</button>
+    <div class="auth-toggle" id="auth-toggle">
+      Don't have an account? <a onclick="toggleAuth()">Create one</a>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APP ─── -->
+<div id="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">Flow<span>Desk</span></div>
+      <div class="sidebar-org" id="org-name">Loading...</div>
+    </div>
+    <nav class="nav">
+      <button class="nav-item active" onclick="showPanel('overview')" id="nav-overview">
+        <span class="icon">📊</span> Overview
+      </button>
+      <button class="nav-item" onclick="showPanel('inbox')" id="nav-inbox">
+        <span class="icon">💬</span> Inbox
+        <span class="nav-badge" id="inbox-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('analytics')" id="nav-analytics">
+        <span class="icon">📈</span> Analytics
+      </button>
+      <button class="nav-item" onclick="showPanel('scripts')" id="nav-scripts">
+        <span class="icon">🤖</span> Scripts
+      </button>
+      <button class="nav-item" onclick="showPanel('fans')" id="nav-fans">
+        <span class="icon">👥</span> Fans
+      </button>
+      <button class="nav-item" onclick="showPanel('accounts')" id="nav-accounts">
+        <span class="icon">🔗</span> Accounts
+      </button>
+      <button class="nav-item" onclick="showPanel('team')" id="nav-team">
+        <span class="icon">🏢</span> Team
+      </button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div>
+          <div class="user-name" id="user-name">—</div>
+          <div class="user-role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ── OVERVIEW ── -->
+    <div class="panel active" id="panel-overview">
+      <div>
+        <div class="panel-title">Overview</div>
+        <div class="panel-subtitle" id="overview-sub">Loading your dashboard...</div>
+      </div>
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card"><div class="stat-label">Total Earnings (30d)</div><div class="stat-value" id="stat-earn">—</div></div>
+        <div class="stat-card"><div class="stat-label">Subscribers</div><div class="stat-value" id="stat-subs">—</div></div>
+        <div class="stat-card"><div class="stat-label">New Today</div><div class="stat-value" id="stat-new">—</div></div>
+        <div class="stat-card"><div class="stat-label">Active Accounts</div><div class="stat-value" id="stat-accts">—</div></div>
+        <div class="stat-card"><div class="stat-label">Team Members</div><div class="stat-value" id="stat-team">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Connected Accounts</div>
+          <button class="btn-sm primary" onclick="showPanel('accounts')">Manage</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Account</th><th>Status</th><th>Last Synced</th></tr></thead>
+            <tbody id="accts-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Team</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+            <tbody id="team-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INBOX ── -->
+    <div class="panel" id="panel-inbox">
+      <div class="inbox-sidebar">
+        <div class="inbox-header">
+          <h2>Inbox</h2>
+          <input class="inbox-search" id="inbox-search" placeholder="Search fans..." oninput="filterConvos()" />
+        </div>
+        <div class="acct-select-wrap">
+          <select class="acct-select" id="inbox-acct" onchange="loadInbox()">
+            <option value="">Select account...</option>
+          </select>
+        </div>
+        <div class="inbox-filters">
+          <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+          <button class="filter-btn" onclick="setFilter(this,'unread')">Unread</button>
+          <button class="filter-btn" onclick="setFilter(this,'follow_up')">Follow-up</button>
+        </div>
+        <div class="inbox-list" id="inbox-list">
+          <div class="loading">Select an account to load inbox</div>
+        </div>
+      </div>
+      <div class="convo-main" id="convo-main">
+        <div class="convo-empty">
+          <div class="icon">💬</div>
+          <div>Select a conversation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS ── -->
+    <div class="panel" id="panel-analytics">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="panel-title">Analytics</div>
+          <div class="panel-subtitle">Earnings & subscriber stats across all accounts</div>
+        </div>
+        <select id="analytics-period" onchange="loadAnalytics()" style="width:120px;">
+          <option value="7d">Last 7 days</option>
+          <option value="30d" selected>Last 30 days</option>
+          <option value="90d">Last 90 days</option>
+        </select>
+      </div>
+      <div class="stat-grid" id="analytics-totals">
+        <div class="loading">Loading analytics...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Per-Account Breakdown</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Account</th><th>Earnings</th><th>Subscribers</th><th>Messages</th><th>Status</th></tr></thead>
+            <tbody id="analytics-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCRIPTS ── -->
+    <div class="panel" id="panel-scripts">
+      <div>
+        <div class="panel-title">Scripts</div>
+        <div class="panel-subtitle">Automation scripts for fan conversations</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Scripts</div>
+          <button class="btn-sm primary" onclick="loadScripts()">↻ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Steps</th><th>Trigger</th><th>Status</th></tr></thead>
+            <tbody id="scripts-table"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FANS ── -->
+    <div class="panel" id="panel-fans">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="panel-title">Fans</div>
+          <div class="panel-subtitle">Fan database across all accounts</div>
+        </div>
+        <select id="fans-acct" onchange="loadFans()" style="width:200px;">
+          <option value="">Select account...</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fan</th><th>Spend 30d</th><th>Lifetime</th><th>Tier</th><th>Last Active</th></tr></thead>
+            <tbody id="fans-table"><tr><td colspan="5" class="loading">Select an account</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACCOUNTS ── -->
+    <div class="panel" id="panel-accounts">
+      <div>
+        <div class="panel-title">Connected Accounts</div>
+        <div class="panel-subtitle">Manage your Fanvue creator accounts</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Accounts</div>
+          <button class="btn-sm primary" onclick="connectAccount()">+ Connect Account</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Account</th><th>Username</th><th>Status</th><th>Last Synced</th><th>Actions</th></tr></thead>
+            <tbody id="accounts-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TEAM ── -->
+    <div class="panel" id="panel-team">
+      <div>
+        <div class="panel-title">Team</div>
+        <div class="panel-subtitle">Manage your agency team members</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Members</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+            <tbody id="full-team-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div id="toast-wrap"></div>
+
+<script>
+const API = '';  // same origin
+let token = localStorage.getItem('fd_token') || '';
+let currentUser = null;
+let accounts = [];
+let inboxFilter = 'all';
+let inboxConvos = [];
+let activeConvoId = null;
+
+// ─── HELPERS ─────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(opts.headers || {})
+    },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-wrap').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function fmt(n) {
+  if (n == null) return '—';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+  return '$' + Number(n).toFixed(2);
+}
+
+function fmtNum(n) {
+  if (n == null) return '—';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return String(n);
+}
+
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const secs = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (secs < 60) return 'just now';
+  if (secs < 3600) return Math.floor(secs/60) + 'm ago';
+  if (secs < 86400) return Math.floor(secs/3600) + 'h ago';
+  return Math.floor(secs/86400) + 'd ago';
+}
+
+function shortTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  if (isToday) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+// ─── AUTH ─────────────────────────────────────────────────
+let isSignup = false;
+function toggleAuth() {
+  isSignup = !isSignup;
+  document.getElementById('signup-fields').style.display = isSignup ? 'flex' : 'none';
+  document.getElementById('auth-title').textContent = isSignup ? 'Create your account' : 'Welcome back';
+  document.getElementById('auth-btn').textContent = isSignup ? 'Create Account' : 'Sign In';
+  document.getElementById('auth-toggle').innerHTML = isSignup
+    ? 'Already have an account? <a onclick="toggleAuth()">Sign in</a>'
+    : 'Don\'t have an account? <a onclick="toggleAuth()">Create one</a>';
+  document.getElementById('auth-err').style.display = 'none';
+}
+
+async function authSubmit() {
+  const btn = document.getElementById('auth-btn');
+  const errEl = document.getElementById('auth-err');
+  const email = document.getElementById('f-email').value.trim();
+  const pass = document.getElementById('f-pass').value;
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+  try {
+    let data;
+    if (isSignup) {
+      const name = document.getElementById('f-name').value.trim();
+      const agencyName = document.getElementById('f-agency').value.trim();
+      if (!name || !agencyName) throw new Error('All fields required');
+      data = await api('/api/auth/signup', { method: 'POST', body: { name, email, password: pass, agencyName } });
+    } else {
+      data = await api('/api/auth/login', { method: 'POST', body: { email, password: pass } });
+    }
+    token = data.token;
+    localStorage.setItem('fd_token', token);
+    currentUser = data.user;
+    initApp();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = isSignup ? 'Create Account' : 'Sign In';
+  }
+}
+
+function logout() {
+  token = '';
+  currentUser = null;
+  accounts = [];
+  localStorage.removeItem('fd_token');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+async function initApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  if (!currentUser) {
+    try { const d = await api('/api/auth/me'); currentUser = d.user; } catch(e) { logout(); return; }
+  }
+  document.getElementById('user-name').textContent = currentUser.name;
+  document.getElementById('user-role').textContent = currentUser.role;
+  document.getElementById('user-avatar').textContent = currentUser.name?.[0]?.toUpperCase() || '?';
+  loadDashboard();
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'scripts') loadScripts();
+  if (name === 'fans') populateAcctSelect('fans-acct');
+  if (name === 'accounts') loadAccountsPanel();
+  if (name === 'team') loadFullTeam();
+}
+
+// ─── DASHBOARD ─────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('/api/dashboard');
+    document.getElementById('org-name').textContent = d.org?.name || 'Your Agency';
+    document.getElementById('overview-sub').textContent = `Welcome back, ${currentUser.name}`;
+    document.getElementById('stat-earn').textContent = fmt(d.totals?.totalEarnings);
+    document.getElementById('stat-subs').textContent = fmtNum(d.totals?.totalSubscribers);
+    document.getElementById('stat-new').textContent = fmtNum(d.totals?.newSubscribersToday);
+    document.getElementById('stat-accts').textContent = d.accounts?.active ?? '—';
+    document.getElementById('stat-team').textContent = d.team?.total ?? '—';
+
+    accounts = d.accounts?.all || [];
+    populateAcctSelects();
+
+    // Accounts table
+    const tbody = document.getElementById('accts-table');
+    if (!accounts.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty">No accounts connected yet</td></tr>';
+    } else {
+      tbody.innerHTML = accounts.map(a => `
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:8px;">
+            ${a.avatar_url ? `<img src="${a.avatar_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;">${(a.label||'?')[0]}</div>`}
+            <div><div style="font-weight:500;">${a.label || a.fanvue_display_name || a.fanvue_username}</div>
+            <div style="font-size:11px;color:var(--text3);">@${a.fanvue_username||''}</div></div>
+          </div></td>
+          <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+          <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
+        </tr>`).join('');
+    }
+
+    // Team table
+    const ttbody = document.getElementById('team-table');
+    const team = d.team?.members || [];
+    if (!team.length) {
+      ttbody.innerHTML = '<tr><td colspan="3" class="empty">No team members</td></tr>';
+    } else {
+      ttbody.innerHTML = team.map(u => `
+        <tr>
+          <td style="font-weight:500">${u.name}</td>
+          <td style="color:var(--text2)">${u.email}</td>
+          <td>${roleBadge(u.role)}</td>
+        </tr>`).join('');
+    }
+
+    // Inbox badge
+    const unreadCount = d.accounts?.all?.reduce((a,b) => a + (b.unread_count || 0), 0) || 0;
+    const badge = document.getElementById('inbox-badge');
+    badge.style.display = unreadCount ? 'inline' : 'none';
+    badge.textContent = unreadCount;
+
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+function roleBadge(role) {
+  const map = { owner: 'badge-purple', manager: 'badge-blue', chatter: 'badge-orange' };
+  return `<span class="badge ${map[role]||'badge-gray'}">${role}</span>`;
+}
+
+// ─── ACCOUNTS ─────────────────────────────────────────────
+function populateAcctSelects() {
+  populateAcctSelect('inbox-acct');
+  populateAcctSelect('fans-acct');
+}
+
+function populateAcctSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select account...</option>' +
+    accounts.filter(a => a.is_active).map(a => `<option value="${a.id}">${a.label || a.fanvue_display_name || a.fanvue_username}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+async function loadAccountsPanel() {
+  try {
+    const d = await api('/api/accounts');
+    accounts = d.accounts || d || [];
+    const tbody = document.getElementById('accounts-table');
+    if (!accounts.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No accounts connected. Click "+ Connect Account" to add one.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = accounts.map(a => `
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:8px;">
+          ${a.avatar_url ? `<img src="${a.avatar_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;">${(a.label||'?')[0]}</div>`}
+          <span style="font-weight:500">${a.label || a.fanvue_display_name || '—'}</span>
+        </div></td>
+        <td style="color:var(--text2)">@${a.fanvue_username||'—'}</td>
+        <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+        <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
+        <td>
+          ${a.needs_reconnect ? `<button class="btn-sm" onclick="reconnectAccount('${a.id}')">Reconnect</button>` : ''}
+          <button class="btn-sm" onclick="syncAccount('${a.id}')">Sync</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    toast('Failed to load accounts: ' + e.message, 'error');
+  }
+}
+
+function connectAccount() {
+  window.location.href = '/api/oauth/connect';
+}
+
+async function syncAccount(id) {
+  try {
+    toast('Syncing inbox...', 'info');
+    await api(`/api/conversations/sync/${id}`, { method: 'POST' });
+    toast('Sync initiated', 'success');
+  } catch (e) {
+    toast('Sync failed: ' + e.message, 'error');
+  }
+}
+
+async function reconnectAccount(id) {
+  window.location.href = `/api/oauth/connect?accountId=${id}`;
+}
+
+// ─── ANALYTICS ─────────────────────────────────────────────
+async function loadAnalytics() {
+  const period = document.getElementById('analytics-period').value;
+  const totalsEl = document.getElementById('analytics-totals');
+  const tbody = document.getElementById('analytics-table');
+  totalsEl.innerHTML = '<div class="loading">Loading analytics...</div>';
+  tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+  try {
+    const d = await api(`/api/analytics/overview?period=${period}`);
+    const t = d.totals;
+    totalsEl.innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Earnings</div><div class="stat-value">${fmt(t.earnings)}</div><div class="stat-sub">${period}</div></div>
+      <div class="stat-card"><div class="stat-label">Subscribers</div><div class="stat-value">${fmtNum(t.subscribers)}</div></div>
+      <div class="stat-card"><div class="stat-label">New Subscribers</div><div class="stat-value">${fmtNum(t.newSubscribers)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Messages</div><div class="stat-value">${fmtNum(t.messages)}</div></div>
+    `;
+    if (!d.accounts?.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No account data available</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.accounts.map(a => `
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:8px;">
+          ${a.avatar_url ? `<img src="${a.avatar_url}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : ''}
+          <span style="font-weight:500">${a.label || a.fanvue_username || '—'}</span>
+        </div></td>
+        <td style="color:var(--green);font-weight:600">${fmt(a.earnings?.total)}</td>
+        <td>${fmtNum(a.stats?.subscriberCount)}</td>
+        <td>${fmtNum(a.stats?.messageCount)}</td>
+        <td>${a.error ? '<span class="badge badge-red">Error</span>' : '<span class="badge badge-green">OK</span>'}</td>
+      </tr>`).join('');
+  } catch (e) {
+    totalsEl.innerHTML = `<div class="empty">Failed to load analytics: ${e.message}</div>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">${e.message}</td></tr>`;
+    toast('Analytics error: ' + e.message, 'error');
+  }
+}
+
+// ─── INBOX ─────────────────────────────────────────────────
+async function loadInbox() {
+  const accountId = document.getElementById('inbox-acct').value;
+  if (!accountId) return;
+  const listEl = document.getElementById('inbox-list');
+  listEl.innerHTML = '<div class="loading">Loading conversations...</div>';
+  try {
+    const d = await api(`/api/conversations?accountId=${accountId}&filter=${inboxFilter}`);
+    inboxConvos = d.conversations || [];
+    renderConvoList(inboxConvos);
+  } catch (e) {
+    listEl.innerHTML = `<div class="empty">${e.message}</div>`;
+    toast('Inbox error: ' + e.message, 'error');
+  }
+}
+
+function renderConvoList(convos) {
+  const listEl = document.getElementById('inbox-list');
+  if (!convos.length) {
+    listEl.innerHTML = '<div class="empty">No conversations found</div>';
+    return;
+  }
+  const search = document.getElementById('inbox-search').value.toLowerCase();
+  const filtered = search
+    ? convos.filter(c => (c.fan?.username||'').toLowerCase().includes(search) || (c.fan?.display_name||'').toLowerCase().includes(search))
+    : convos;
+  listEl.innerHTML = filtered.map(c => {
+    const fan = c.fan || {};
+    const name = fan.display_name || fan.username || 'Unknown fan';
+    const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    return `<div class="conv-item${c.is_unread?' unread':''}${c.id===activeConvoId?' active':''}" onclick="openConvo('${c.id}','${encodeURIComponent(name)}')">
+      <div class="conv-avatar">${fan.avatar_url ? `<img src="${fan.avatar_url}" onerror="this.parentElement.textContent='${initials}'">` : initials}</div>
+      <div class="conv-info">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="conv-name">${name}</div>
+          <div class="conv-time">${shortTime(c.last_message_at)}</div>
+        </div>
+        <div class="conv-preview">${c.last_message_preview || '—'}</div>
+      </div>
+      ${c.is_unread ? '<div class="unread-dot"></div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function filterConvos() { renderConvoList(inboxConvos); }
+
+function setFilter(btn, filter) {
+  inboxFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadInbox();
+}
+
+async function openConvo(id, encodedName) {
+  activeConvoId = id;
+  const name = decodeURIComponent(encodedName);
+  const main = document.getElementById('convo-main');
+  main.innerHTML = `
+    <div class="convo-topbar">
+      <div><div class="convo-fan-name">${name}</div><div class="convo-fan-meta">Loading...</div></div>
+      <button class="btn-sm" onclick="openConvo('${id}','${encodedName}')">↻</button>
+    </div>
+    <div class="convo-msgs" id="msgs-box"><div class="loading">Loading messages...</div></div>
+    <div class="convo-input-wrap">
+      <textarea class="convo-input" id="reply-input" placeholder="Type a message..." rows="2" onkeydown="handleMsgKey(event,'${id}')"></textarea>
+      <button class="btn-send" onclick="sendMsg('${id}')">Send</button>
+    </div>`;
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.conv-item').forEach(el => {
+    if (el.getAttribute('onclick')?.includes(id)) el.classList.add('active');
+  });
+  try {
+    const d = await api(`/api/conversations/${id}`);
+    const fan = d.conversation?.fan;
+    main.querySelector('.convo-fan-meta').textContent =
+      `@${fan?.username || '—'} · ${fan?.subscription_status || ''} · Spend: ${fmt(fan?.spend_30d)} (30d)`;
+    const msgs = d.messages || [];
+    const box = document.getElementById('msgs-box');
+    if (!msgs.length) {
+      box.innerHTML = '<div class="empty">No messages yet</div>';
+    } else {
+      box.innerHTML = msgs.map(m => {
+        const out = m.direction === 'outbound';
+        return `<div class="msg ${out?'outbound':'inbound'}">
+          <div class="msg-bubble">${escHtml(m.content || '[Media]')}</div>
+          <div class="msg-time">${shortTime(m.sent_at)}</div>
+        </div>`;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+  } catch (e) {
+    main.querySelector('#msgs-box').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+  }
+}
+
+async function sendMsg(convoId) {
+  const input = document.getElementById('reply-input');
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+  try {
+    await api(`/api/conversations/${convoId}/messages`, { method: 'POST', body: { content } });
+    openConvo(convoId, encodeURIComponent(document.querySelector('.convo-fan-name')?.textContent || ''));
+    toast('Sent', 'success');
+  } catch (e) {
+    toast('Send failed: ' + e.message, 'error');
+    input.value = content;
+  }
+}
+
+function handleMsgKey(e, id) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(id); }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── SCRIPTS ───────────────────────────────────────────────
+async function loadScripts() {
+  const tbody = document.getElementById('scripts-table');
+  tbody.innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+  try {
+    const d = await api('/api/scripts');
+    const scripts = d.scripts || d || [];
+    if (!scripts.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No scripts yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = scripts.map(s => `
+      <tr>
+        <td style="font-weight:500">${s.name}</td>
+        <td>${s.script_steps?.length || s.step_count || '—'}</td>
+        <td style="color:var(--text2)">${s.trigger_event || s.trigger || 'Manual'}</td>
+        <td>${s.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ─── FANS ───────────────────────────────────────────────────
+async function loadFans() {
+  const accountId = document.getElementById('fans-acct').value;
+  if (!accountId) return;
+  const tbody = document.getElementById('fans-table');
+  tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading fans...</td></tr>';
+  try {
+    const d = await api(`/api/fans?accountId=${accountId}&limit=50`);
+    const fans = d.fans || d || [];
+    if (!fans.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No fans found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = fans.map(f => `
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:8px;">
+          ${f.avatar_url ? `<img src="${f.avatar_url}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">` : ''}
+          <div><div style="font-weight:500">${f.display_name || f.username || '—'}</div>
+          <div style="font-size:11px;color:var(--text3)">@${f.username||''}</div></div>
+        </div></td>
+        <td style="color:var(--green)">${fmt(f.spend_30d)}</td>
+        <td style="color:var(--text2)">${fmt(f.lifetime_spend)}</td>
+        <td>${f.spend_tier ? `<span class="badge badge-purple">${f.spend_tier}</span>` : '—'}</td>
+        <td style="color:var(--text2)">${timeAgo(f.last_active_at)}</td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ─── TEAM ───────────────────────────────────────────────────
+async function loadFullTeam() {
+  const tbody = document.getElementById('full-team-table');
+  try {
+    const d = await api('/api/team');
+    const members = d.members || d || [];
+    if (!members.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty">No team members</td></tr>';
+      return;
+    }
+    tbody.innerHTML = members.map(u => `
+      <tr>
+        <td style="font-weight:500">${u.name}</td>
+        <td style="color:var(--text2)">${u.email}</td>
+        <td>${roleBadge(u.role)}</td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="3" class="empty">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ─── BOOT ─────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (token) {
+    initApp();
+  }
+  // enter key on auth fields
+  ['f-email','f-pass','f-name','f-agency'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key==='Enter') authSubmit(); });
+  });
+});
+</script>
+</body>
+</html>
