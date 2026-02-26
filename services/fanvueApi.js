@@ -156,6 +156,85 @@ async function getPPVStats(account) {
   }
 }
 
+// ─── INSIGHTS API ─────────────────────────────────────────
+
+/**
+ * Get insights for a specific fan
+ * GET /insights/fans/{userUuid}
+ * Scopes: read:insights, read:fan
+ * Returns: status, spending (total, lastPurchaseAt, maxSinglePayment, sources), subscription
+ * All monetary values are in cents
+ */
+async function getFanInsights(account, fanUserUuid) {
+  return fanvueRequest(account, 'GET', `/insights/fans/${fanUserUuid}`);
+}
+
+/**
+ * Get earnings/transaction history (cursor-paginated)
+ * GET /insights/earnings
+ * Scopes: read:insights
+ * @param {object} opts - { cursor, limit, source, startDate, endDate }
+ *   source: all|affiliate|mediaLink|message|post|referral|renewal|subscription|tip|giveaway
+ * Returns: { data: [...], nextCursor }
+ * All monetary values are in cents
+ */
+async function getInsightsEarnings(account, opts = {}) {
+  const params = {};
+  if (opts.cursor) params.cursor = opts.cursor;
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.source) params.source = opts.source;
+  if (opts.startDate) params.startDate = opts.startDate;
+  if (opts.endDate) params.endDate = opts.endDate;
+  return fanvueRequest(account, 'GET', '/insights/earnings', null, params);
+}
+
+/**
+ * Get top-spending fans (page-paginated)
+ * GET /insights/top-spenders
+ * Scopes: read:insights
+ * @param {object} opts - { page, size }
+ * Returns: { data: [{ gross, net, messages, user }], pagination }
+ * All monetary values are in cents
+ */
+async function getTopSpenders(account, opts = {}) {
+  const params = {};
+  if (opts.page) params.page = opts.page;
+  if (opts.size) params.size = opts.size;
+  return fanvueRequest(account, 'GET', '/insights/top-spenders', null, params);
+}
+
+/**
+ * Get daily subscriber count history
+ * GET /insights/subscribers
+ * Scopes: read:insights
+ * @param {object} opts - { startDate, endDate }
+ * Returns: { data: [{ date, count }] }
+ */
+async function getInsightsSubscribers(account, opts = {}) {
+  const params = {};
+  if (opts.startDate) params.startDate = opts.startDate;
+  if (opts.endDate) params.endDate = opts.endDate;
+  return fanvueRequest(account, 'GET', '/insights/subscribers', null, params);
+}
+
+/**
+ * Get reversal/refund data
+ * GET /insights/spending
+ * Scopes: read:insights
+ * @param {object} opts - { cursor, limit, startDate, endDate }
+ * Returns: { data: [...], nextCursor }
+ */
+async function getInsightsSpending(account, opts = {}) {
+  const params = {};
+  if (opts.cursor) params.cursor = opts.cursor;
+  if (opts.limit) params.limit = opts.limit;
+  if (opts.startDate) params.startDate = opts.startDate;
+  if (opts.endDate) params.endDate = opts.endDate;
+  return fanvueRequest(account, 'GET', '/insights/spending', null, params);
+}
+
+// ─── CHAT API ─────────────────────────────────────────────
+
 /**
  * Get list of chat conversations (paginated)
  * GET /chats
@@ -254,6 +333,13 @@ module.exports = {
   getEarningsBreakdown,
   getSubscribers,
   getPPVStats,
+  // Insights API
+  getFanInsights,
+  getInsightsEarnings,
+  getTopSpenders,
+  getInsightsSubscribers,
+  getInsightsSpending,
+  // Chat API
   getChats,
   getChatMessages,
   sendMessage,
