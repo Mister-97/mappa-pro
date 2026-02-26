@@ -90,13 +90,13 @@ router.get('/', authenticate, async (req, res, next) => {
  */
 router.get('/:conversationId', authenticate, async (req, res, next) => {
   try {
-    // Use explicit FK hints to avoid ambiguous relationship errors
-    // conversations has two FKs to users: assigned_chatter_id and locked_by
+    // Use explicit FK constraint names to avoid ambiguous relationship errors
+    // fan_notes.author_id -> users uses constraint: fan_notes_author_id_fkey
     const { data: conversation, error } = await supabase
       .from('conversations')
       .select(`
         *,
-        fan:fans(*, fan_tags(tag), fan_notes(id, content, created_at, author:users!author_id(name))),
+        fan:fans(*, fan_tags(tag), fan_notes(id, content, created_at, author:users!fan_notes_author_id_fkey(name))),
         assigned_chatter:users!assigned_chatter_id(id, name),
         account:connected_accounts(id, access_token_enc, refresh_token_enc, token_expires_at, fanvue_username)
       `)
