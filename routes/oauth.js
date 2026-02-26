@@ -123,6 +123,7 @@ router.get('/callback', async (req, res, next) => {
       refresh_token_enc: encrypt(refresh_token),
       token_expires_at: new Date(Date.now() + (expires_in || 3600) * 1000).toISOString(),
       is_active: true,
+      needs_reconnect: false,
       last_synced: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

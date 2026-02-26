@@ -785,6 +785,11 @@ let activeConvoId = null;
 let activeFanId = null;
 let activeConvoData = null;
 let nicknameEditMode = false;
+let oldestMsgTimestamp = null;
+let loadingOlder = false;
+let noMoreMessages = false;
+let livePollInterval = null;
+const convoCache = new Map(); // id -> { html, oldestTs, noMore, convoData, fanId }
 let summaryPeriods = ['Last 24 hours', 'Last 7 days', 'Last 30 days'];
 let currentSummaryPeriod = 0;
 let activeNoteFilter = 'all';
@@ -1048,8 +1053,14 @@ async function loadAccountsPanel() {
   }
 }
 
-function connectAccount() {
-  window.location.href = '/api/oauth/connect';
+async function connectAccount() {
+  try {
+    const d = await api('/api/oauth/connect');
+    if (d.authUrl) window.location.href = d.authUrl;
+    else alert('Failed to get auth URL');
+  } catch (e) {
+    alert('Connect failed: ' + e.message);
+  }
 }
 
 async function syncAccount(id) {
@@ -1063,7 +1074,13 @@ async function syncAccount(id) {
 }
 
 async function reconnectAccount(id) {
-  window.location.href = `/api/oauth/connect?accountId=${id}`;
+  try {
+    const d = await api(`/api/oauth/connect?accountId=${id}`);
+    if (d.authUrl) window.location.href = d.authUrl;
+    else alert('Failed to get auth URL');
+  } catch (e) {
+    alert('Reconnect failed: ' + e.message);
+  }
 }
 
 // ─── ANALYTICS ─────────────────────────────────────────────
@@ -1158,10 +1175,130 @@ function setFilter(btn, filter) {
   loadInbox();
 }
 
+function renderMsgHtml(m) {
+  const out = m.direction === 'outbound';
+  const chatter = out && m.sent_by_user?.name ? `<span class="msg-chatter">${escHtml(m.sent_by_user.name)}</span>` : '';
+  const statusNote = out && m.platform_status === 'pending' ? `<span class="msg-status sending">Pending</span>` : '';
+  return `<div class="msg ${out?'outbound':'inbound'}" data-sent-at="${m.sent_at || ''}" data-msg-id="${m.id || ''}">
+    <div class="msg-bubble">${escHtml(m.content || '[Media]')}</div>
+    <div class="msg-meta">
+      ${chatter}
+      <span class="msg-time">${shortTime(m.sent_at)}</span>
+      ${statusNote}
+    </div>
+  </div>`;
+}
+
+function saveConvoToCache(id) {
+  const msgsBox = document.getElementById('msgs-box');
+  if (!msgsBox) return;
+  convoCache.set(id, {
+    mainHtml: document.getElementById('convo-main').innerHTML,
+    scrollTop: msgsBox.scrollTop,
+    oldestTs: oldestMsgTimestamp,
+    noMore: noMoreMessages,
+    convoData: activeConvoData,
+    fanId: activeFanId
+  });
+}
+
+function setupConvoListeners(id, msgsBox) {
+  // Scroll-up pagination listener
+  msgsBox.addEventListener('scroll', async function() {
+    if (msgsBox.scrollTop < 100 && !loadingOlder && !noMoreMessages && oldestMsgTimestamp && activeConvoId === id) {
+      loadingOlder = true;
+      const loader = document.createElement('div');
+      loader.className = 'loading';
+      loader.textContent = 'Loading older...';
+      msgsBox.prepend(loader);
+      try {
+        const older = await api(`/api/conversations/${id}?limit=20&before=${encodeURIComponent(oldestMsgTimestamp)}`);
+        loader.remove();
+        const olderMsgs = older.messages || [];
+        if (olderMsgs.length > 0) {
+          const prevHeight = msgsBox.scrollHeight;
+          msgsBox.insertAdjacentHTML('afterbegin', olderMsgs.map(renderMsgHtml).join(''));
+          msgsBox.scrollTop = msgsBox.scrollHeight - prevHeight;
+          oldestMsgTimestamp = olderMsgs[0]?.sent_at || oldestMsgTimestamp;
+        }
+        noMoreMessages = !older.has_more;
+      } catch (err) {
+        loader.remove();
+        console.error('Scroll pagination error:', err);
+      }
+      loadingOlder = false;
+    }
+  });
+
+  // Start live polling for new incoming messages
+  livePollInterval = setInterval(async () => {
+    if (activeConvoId !== id) { clearInterval(livePollInterval); livePollInterval = null; return; }
+    try {
+      const poll = await api(`/api/conversations/${id}?limit=5`);
+      const newMsgs = poll.messages || [];
+      if (!newMsgs.length) return;
+      const displayed = msgsBox.querySelectorAll('.msg[data-msg-id]');
+      const displayedIds = new Set();
+      displayed.forEach(el => { const mid = el.getAttribute('data-msg-id'); if (mid) displayedIds.add(mid); });
+      const truly = newMsgs.filter(m => m.id && !displayedIds.has(m.id));
+      if (truly.length > 0) {
+        const wasAtBottom = msgsBox.scrollHeight - msgsBox.scrollTop - msgsBox.clientHeight < 50;
+        for (const m of truly) {
+          if (m.direction === 'outbound') {
+            const optimistic = msgsBox.querySelector('.msg.outbound[data-temp-id]');
+            if (optimistic) {
+              optimistic.outerHTML = renderMsgHtml(m);
+              continue;
+            }
+          }
+          msgsBox.insertAdjacentHTML('beforeend', renderMsgHtml(m));
+        }
+        if (wasAtBottom) msgsBox.scrollTop = msgsBox.scrollHeight;
+      }
+    } catch (err) { /* silent */ }
+  }, 7000);
+}
+
 async function openConvo(id, encodedName) {
+  // Save current conversation to cache before switching
+  if (activeConvoId && activeConvoId !== id) {
+    saveConvoToCache(activeConvoId);
+  }
+
+  // Clear previous live poll
+  if (livePollInterval) { clearInterval(livePollInterval); livePollInterval = null; }
+
   activeConvoId = id;
+  loadingOlder = false;
+
   const name = decodeURIComponent(encodedName);
   const main = document.getElementById('convo-main');
+
+  // Update active state in sidebar
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.conv-item').forEach(el => {
+    if (el.getAttribute('onclick')?.includes(id)) el.classList.add('active');
+  });
+
+  // Restore from cache if available
+  const cached = convoCache.get(id);
+  if (cached) {
+    main.innerHTML = cached.mainHtml;
+    oldestMsgTimestamp = cached.oldestTs;
+    noMoreMessages = cached.noMore;
+    activeConvoData = cached.convoData;
+    activeFanId = cached.fanId;
+    const msgsBox = document.getElementById('msgs-box');
+    if (msgsBox) msgsBox.scrollTop = cached.scrollTop;
+    setupConvoListeners(id, msgsBox);
+    showFanDetailPanel(cached.convoData);
+    return;
+  }
+
+  // Fresh load
+  oldestMsgTimestamp = null;
+  noMoreMessages = false;
+
   main.innerHTML = `
     <div class="convo-topbar">
       <div><div class="convo-fan-name">${name}</div><div class="convo-fan-meta">Loading...</div></div>
@@ -1172,10 +1309,6 @@ async function openConvo(id, encodedName) {
       <textarea class="convo-input" id="reply-input" placeholder="Type a message..." rows="2" onkeydown="handleMsgKey(event,'${id}')"></textarea>
       <button class="btn-send" onclick="sendMsg('${id}')">Send</button>
     </div>`;
-  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.conv-item').forEach(el => {
-    if (el.getAttribute('onclick')?.includes(id)) el.classList.add('active');
-  });
   try {
     const d = await api(`/api/conversations/${id}`);
     activeConvoData = d;
@@ -1188,26 +1321,16 @@ async function openConvo(id, encodedName) {
     if (!msgs.length) {
       box.innerHTML = '<div class="empty">No messages yet</div>';
     } else {
-      box.innerHTML = msgs.map(m => {
-        const out = m.direction === 'outbound';
-        const chatter = out && m.sent_by_user?.name ? `<span class="msg-chatter">${escHtml(m.sent_by_user.name)}</span>` : '';
-        const statusNote = out && m.platform_status === 'pending' ? `<span class="msg-status sending">Pending</span>` : '';
-        return `<div class="msg ${out?'outbound':'inbound'}">
-          <div class="msg-bubble">${escHtml(m.content || '[Media]')}</div>
-          <div class="msg-meta">
-            ${chatter}
-            <span class="msg-time">${shortTime(m.sent_at)}</span>
-            ${statusNote}
-          </div>
-        </div>`;
-      }).join('');
-      // Re-append any in-flight optimistic messages for this conversation
+      box.innerHTML = msgs.map(renderMsgHtml).join('');
+      oldestMsgTimestamp = msgs[0]?.sent_at || null;
+      noMoreMessages = !d.has_more;
       msgQueue.forEach(item => {
         if (item.convoId === id) appendOptimisticMsg(item.tempId, item.content);
       });
       box.scrollTop = box.scrollHeight;
     }
-    // Show fan detail panel with DB data first, then fetch live insights
+
+    setupConvoListeners(id, document.getElementById('msgs-box'));
     showFanDetailPanel(d);
   } catch (e) {
     main.querySelector('#msgs-box').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
@@ -1436,6 +1559,14 @@ async function processQueue() {
     try {
       await api(`/api/conversations/${item.convoId}/messages`, { method: 'POST', body: { content: item.content } });
       updateMsgStatus(item.tempId, 'sent');
+      // Update conversation preview in sidebar
+      const convo = inboxConvos.find(c => c.id === item.convoId);
+      if (convo) {
+        convo.last_message_preview = item.content.substring(0, 100);
+        convo.last_message_at = new Date().toISOString();
+        convo.last_message_from = 'model';
+        renderConvoList(inboxConvos);
+      }
     } catch (e) {
       updateMsgStatus(item.tempId, 'failed', item.content, item.convoId);
     }

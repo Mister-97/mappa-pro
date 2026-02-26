@@ -122,35 +122,42 @@ async function pollAccount(account) {
             updated_at: new Date().toISOString()
           }, { onConflict: 'account_id,fan_id' });
 
-        // Cache inbound message in messages table
-        if (isFromFan && lastMsg?.uuid) {
-          const { data: existingMsg } = await supabase
-            .from('messages')
-            .select('id')
-            .eq('fanvue_message_id', lastMsg.uuid)
-            .single();
+        // Fetch recent messages and sync to DB to keep cache warm
+        const { data: conv } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('account_id', account.id)
+          .eq('fan_id', fan.id)
+          .single();
 
-          if (!existingMsg) {
-            const { data: conv } = await supabase
-              .from('conversations')
-              .select('id')
-              .eq('account_id', account.id)
-              .eq('fan_id', fan.id)
-              .single();
-
-            if (conv) {
-              await supabase.from('messages').insert({
-                id: uuidv4(),
-                conversation_id: conv.id,
-                organization_id: account.organization_id,
-                fanvue_message_id: lastMsg.uuid,
-                direction: 'inbound',
-                content: lastMsg.text || null,
-                is_ppv: lastMsg.pricing?.price > 0 || false,
-                ppv_price: lastMsg.pricing?.price || null,
-                sent_at: lastMsg.sentAt
+        if (conv) {
+          try {
+            const msgResponse = await fanvueApi.getChatMessages(account, fan_user.uuid, 1, 50, false);
+            const fanvueMsgs = msgResponse?.data || [];
+            if (fanvueMsgs.length > 0) {
+              const toUpsert = fanvueMsgs.map(msg => {
+                const msgIsFromFan = msg.sender?.uuid === fan_user.uuid;
+                return {
+                  id: msg.uuid,
+                  conversation_id: conv.id,
+                  organization_id: account.organization_id,
+                  fanvue_message_id: msg.uuid,
+                  direction: msgIsFromFan ? 'inbound' : 'outbound',
+                  content: msg.text || null,
+                  media_urls: msg.attachments?.map(a => a.url || a.fileUrl).filter(Boolean) || [],
+                  is_ppv: (msg.pricing?.price > 0) || false,
+                  ppv_price: msg.pricing?.price || null,
+                  ppv_unlocked: msg.pricing?.isUnlocked || false,
+                  sent_at: msg.sentAt || msg.createdAt,
+                  platform_status: 'delivered'
+                };
               });
+              await supabase
+                .from('messages')
+                .upsert(toUpsert, { onConflict: 'fanvue_message_id' });
             }
+          } catch (msgErr) {
+            console.error(`[InboxPoller] Message sync error for ${fan_user.username}:`, msgErr.message);
           }
         }
       }
@@ -183,12 +190,15 @@ async function pollAccount(account) {
         updated_at: new Date().toISOString()
       });
 
-    // If it's an auth error, mark account as needing reconnect
+    // If it's an auth error, try refreshing the token before giving up
     if (err.message?.includes('401') || err.message?.includes('403')) {
-      await supabase
-        .from('connected_accounts')
-        .update({ is_active: false, needs_reconnect: true })
-        .eq('id', account.id);
+      try {
+        await fanvueApi.refreshToken(account);
+        console.log(`[InboxPoller] Token refreshed for ${account.fanvue_username}, will retry next cycle`);
+      } catch (refreshErr) {
+        // refreshToken already marks needs_reconnect on definitive auth failures
+        console.error(`[InboxPoller] Token refresh also failed for ${account.fanvue_username}:`, refreshErr.message);
+      }
     }
   }
 }

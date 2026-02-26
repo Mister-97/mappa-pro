@@ -48,10 +48,14 @@ async function refreshToken(account) {
 
     return access_token;
   } catch (err) {
-    await supabase
-      .from('connected_accounts')
-      .update({ is_active: false, needs_reconnect: true })
-      .eq('id', account.id);
+    // Only mark as needs_reconnect on definitive auth failures (401/403), not transient errors
+    const status = err.response?.status;
+    if (status === 401 || status === 403) {
+      await supabase
+        .from('connected_accounts')
+        .update({ is_active: false, needs_reconnect: true })
+        .eq('id', account.id);
+    }
 
     throw new Error(`Token refresh failed for account ${account.id}: ${err.message}`);
   }
