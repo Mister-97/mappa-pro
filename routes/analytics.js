@@ -19,14 +19,15 @@ router.use((req, res, next) => {
 const toDollars = (cents) => (cents || 0) / 100;
 
 /**
- * Helper: parse period string into startDate/endDate ISO strings
+ * Helper: parse period string into startDate/endDate ISO 8601 datetime strings
+ * Fanvue requires full datetime format e.g. 2024-10-20T00:00:00Z (not YYYY-MM-DD)
  * Accepts: '7d', '30d', '90d', 'all'
  */
 function parsePeriod(period = '30d') {
   if (period === 'all') return {};
   const days = parseInt(period) || 30;
-  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const endDate = new Date().toISOString().split('T')[0];
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const endDate = new Date().toISOString();
   return { startDate, endDate };
 }
 
@@ -74,16 +75,17 @@ router.get('/overview', authenticate, async (req, res, next) => {
           earningsTotal = earningsData.reduce((sum, tx) => sum + toDollars(tx.net || tx.gross || 0), 0);
         }
 
-        // Latest subscriber count from history, or fall back to stats
+        // Sum new/cancelled subscribers from daily history
+        // Response shape: { date, total (cumulative net), newSubscribersCount, cancelledSubscribersCount }
         let subscriberCount = stats?.subscriberCount || 0;
         let newSubscribers = 0;
         if (subscribersResult.status === 'fulfilled') {
           const subHistory = subscribersResult.value?.data || [];
           if (subHistory.length > 0) {
-            subscriberCount = subHistory[subHistory.length - 1]?.count ?? subscriberCount;
-            newSubscribers = subHistory.length > 1
-              ? (subHistory[subHistory.length - 1]?.count || 0) - (subHistory[0]?.count || 0)
-              : 0;
+            // total = cumulative net change from query start — last entry is the most recent
+            const latestTotal = subHistory[subHistory.length - 1]?.total ?? 0;
+            subscriberCount = stats?.subscriberCount || 0; // stats has the live absolute count
+            newSubscribers = subHistory.reduce((sum, d) => sum + (d.newSubscribersCount || 0), 0);
           }
         }
 
@@ -205,6 +207,7 @@ router.get('/:accountId/top-spenders', authenticate, async (req, res, next) => {
  * GET /api/analytics/:accountId/subscribers
  * Daily subscriber count history for a single account.
  * Query params: period (7d/30d/90d/all)
+ * Response shape per day: { date, total (cumulative net), newSubscribersCount, cancelledSubscribersCount }
  */
 router.get('/:accountId/subscribers', authenticate, async (req, res, next) => {
   try {
@@ -225,12 +228,13 @@ router.get('/:accountId/subscribers', authenticate, async (req, res, next) => {
     const result = await fanvueApi.getInsightsSubscribers(account, { startDate, endDate });
     const data = result?.data || [];
 
-    // Derive net change
-    const startCount = data[0]?.count || 0;
-    const endCount = data[data.length - 1]?.count || 0;
-    const netChange = endCount - startCount;
+    // Sum new subscribers across all days in the period
+    const newSubscribers = data.reduce((sum, d) => sum + (d.newSubscribersCount || 0), 0);
+    const cancelledSubscribers = data.reduce((sum, d) => sum + (d.cancelledSubscribersCount || 0), 0);
+    // total on the latest entry = cumulative net change from startDate
+    const netChange = data.length > 0 ? (data[data.length - 1]?.total || 0) : 0;
 
-    res.json({ data, currentCount: endCount, netChange, period });
+    res.json({ data, newSubscribers, cancelledSubscribers, netChange, period });
   } catch (err) {
     next(err);
   }
