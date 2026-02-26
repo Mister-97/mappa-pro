@@ -81,7 +81,7 @@ router.get('/:fanId', authenticate, async (req, res, next) => {
       .select(`
         *,
         fan_tags(id, tag, created_at),
-        fan_notes(id, content, created_at, author:users(name))
+        fan_notes(id, content, category, created_at, author:users(name))
       `)
       .eq('id', req.params.fanId)
       .eq('organization_id', req.user.organization_id)
@@ -171,11 +171,11 @@ router.delete('/:fanId/tags/:tag', authenticate, async (req, res, next) => {
 
 /**
  * POST /api/fans/:fanId/notes
- * Add internal note
+ * Add internal note (supports optional category: 'all' | 'must_know' | 'top_facts')
  */
 router.post('/:fanId/notes', authenticate, async (req, res, next) => {
   try {
-    const { content } = req.body;
+    const { content, category = 'all' } = req.body;
     if (!content) return res.status(400).json({ error: 'content required' });
 
     const { data: fan } = await supabase
@@ -194,14 +194,37 @@ router.post('/:fanId/notes', authenticate, async (req, res, next) => {
         fan_id: req.params.fanId,
         organization_id: req.user.organization_id,
         author_id: req.user.id,
-        content
+        content,
+        category
       })
-      .select('id, content, created_at')
+      .select('id, content, category, created_at')
       .single();
 
     if (error) throw error;
 
     res.status(201).json({ note });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PATCH /api/fans/:fanId/general-notes
+ * Save general notes textarea for a fan
+ */
+router.patch('/:fanId/general-notes', authenticate, async (req, res, next) => {
+  try {
+    const { notes } = req.body;
+    if (notes === undefined) return res.status(400).json({ error: 'notes required' });
+
+    const { error } = await supabase
+      .from('fans')
+      .update({ notes, updated_at: new Date().toISOString() })
+      .eq('id', req.params.fanId)
+      .eq('organization_id', req.user.organization_id);
+
+    if (error) throw error;
+    res.json({ message: 'Notes saved' });
   } catch (err) {
     next(err);
   }
