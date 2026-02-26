@@ -1220,11 +1220,11 @@ function showFanDetailPanel(data) {
   document.getElementById('fdp-summary-result').style.display = 'none';
   document.getElementById('fdp-summary-result').textContent = '';
 
-  // Fetch live Fanvue Insights if we have a fan ID
+  // Fetch live Fanvue Insights if we have a fan ID — unwrap the { insights: {...} } envelope
   if (activeFanId) {
     setInsightsLoading(true);
     api(`/api/fans/${activeFanId}/insights`)
-      .then(insights => populatePanelFromInsights(insights))
+      .then(d => populatePanelFromInsights(d.insights))
       .catch(() => { /* silently keep DB values */ })
       .finally(() => setInsightsLoading(false));
   }
