@@ -1,6 +1,16 @@
 # FlowDesk Project Context — Claude Handoff File
 > Paste this at the start of a new chat to get Claude up to speed instantly.
-> Last updated: 2026-02-26 — Analytics rewrite complete, all Insights API endpoints wired up
+> Last updated: 2026-02-26 — Fan detail panel insights fix, branch workflow introduced
+
+---
+
+## ⚠️ Branch Workflow (IMPORTANT)
+
+**All development happens on the `dev` branch — never commit directly to `main`.**
+
+- Claude and collaborators work on `dev`
+- When a feature/fix is ready, open a Pull Request: `dev → main`
+- `main` is the production branch (auto-deploys to Render)
 
 ---
 
@@ -98,6 +108,7 @@
 - General notes per fan ✅
 - Backend Fanvue Insights API functions in `services/fanvueApi.js` ✅
 - Backend `GET /api/fans/:fanId/insights` endpoint (returns normalised $/dollars) ✅
+- Fan detail panel spending data now displays correctly (fixes insights envelope unwrap bug) ✅
 
 ---
 
@@ -115,23 +126,29 @@ All monetary values in **cents** from Fanvue — converted to **dollars** in the
 | `getInsightsSpending(account, params)` | `GET /insights/spending` | Reversal/refund/chargeback data |
 
 ### `GET /api/fans/:fanId/insights` response shape
+The backend wraps the normalised data in an `insights` key:
 ```json
 {
-  "fan_type": "subscriber|fan|blocked",
-  "lifetime_spend": 42.50,
-  "last_purchase_at": "2026-01-10T...",
-  "max_single_payment": 15.00,
-  "ppv_total": 10.00,
-  "tip_total": 5.00,
-  "subscription_total": 20.00,
-  "renewal_total": 7.50,
-  "post_total": 0.00,
-  "subscription_status": "active|expired|...",
-  "subscription_started_at": "...",
-  "subscription_renews_at": "...",
-  "auto_renew": true
+  "insights": {
+    "fan_type": "subscriber|fan|follower|blocked",
+    "lifetime_spend": 42.50,
+    "last_purchase_at": "2026-01-10T...",
+    "max_single_payment": 15.00,
+    "ppv_total": 10.00,
+    "tip_total": 5.00,
+    "subscription_total": 20.00,
+    "renewal_total": 7.50,
+    "post_total": 0.00,
+    "subscription_status": "active|expired|follower|...",
+    "subscription_started_at": "...",
+    "subscription_renews_at": "...",
+    "auto_renew": true
+  }
 }
 ```
+
+> ⚠️ **Important:** The frontend must unwrap `d.insights` before passing to `populatePanelFromInsights()`.
+> The fix is `.then(d => populatePanelFromInsights(d.insights))` — NOT `.then(d => populatePanelFromInsights(d))`.
 
 ---
 
@@ -143,13 +160,13 @@ All monetary values in **cents** from Fanvue — converted to **dollars** in the
 | Spending | `fdp-since` | `subscription_started_at` |
 | Spending | `fdp-last-spend` | `last_purchase_at` |
 | Spending | `fdp-ppv-total` | `ppv_total` |
-| Spending | `fdp-ppv-avg` | calculated |
+| Spending | `fdp-ppv-avg` | calculated (not returned by API, shown blank) |
 | Spending | `fdp-tip-total` | `tip_total` |
-| Spending | `fdp-tip-avg` | calculated |
-| Subscription | `fdp-fan-type` | `fan_type` |
+| Spending | `fdp-tip-avg` | calculated (not returned by API, shown blank) |
+| Subscription | `fdp-fan-type` | `fan_type` (badge colour: purple=subscriber, blue=fan, gray=follower, red=blocked) |
 | Subscription | `fdp-sub-cost` | `subscription_total` |
-| Subscription | `fdp-sub-duration` | calculated from dates |
-| Subscription | `fdp-sub-renew` | `subscription_renews_at` |
+| Subscription | `fdp-sub-duration` | calculated from `subscription_started_at` → `subscription_renews_at` |
+| Subscription | `fdp-sub-renew` | `auto_renew` + `subscription_renews_at` |
 
 ---
 
@@ -157,26 +174,19 @@ All monetary values in **cents** from Fanvue — converted to **dollars** in the
 
 | Commit | Description |
 |---|---|
+| `7dbd433` | fix: unwrap insights response before populating fan detail panel |
+| `f3a90fb` | Analytics rewrite — parsePeriod ISO 8601, subscriber field mapping fixed |
 | `e5232b5` | Rewrite analytics.js — replace legacy endpoints with Insights API |
-| `ccaf40c` | Fix getStats() fanCounts field paths |
-| `41db054` | Fixed PostgREST foreign key constraint 404 |
 | `b7a4406` | Fixed message send response, added PATCH nickname endpoint |
 | `f3f4019` | Fan detail panel — full CSS, HTML, JS |
-| `1e7fb12` | DB migration: add category to fan_notes; PATCH general-notes; notes now return category |
+| `1e7fb12` | DB migration: add category to fan_notes; PATCH general-notes |
 | `ee1f04c` | Insights API functions in fanvueApi.js |
 | `5b5f095` | Added GET /api/fans/:fanId/insights endpoint |
 
 ---
 
-## Pending Work
+## Pending / Next Work
 
-### ✅ All previously pending tasks are complete
-
-1. ✅ `showFanDetailPanel()` — two-phase load: DB instant, Insights overlay async (commit 8432285)
-2. ✅ `routes/analytics.js` rewrite — all 5 endpoints on Insights API (commit e5232b5)
-3. ✅ Message ordering — fixed (sort by sent_at ASC in routes/conversations.js)
-
-### Next potential work
 - Wire analytics endpoints to frontend charts/tables in `flowdesk-complete.html`
 - Add pagination controls for top-spenders and earnings tables
 - Consider caching Insights API responses (rate limits)
@@ -186,6 +196,8 @@ All monetary values in **cents** from Fanvue — converted to **dollars** in the
 ## How to Resume Work
 
 Tell Claude:
-> "I'm continuing work on FlowDesk. Here's the context file: [paste this doc]"
+> "I'm continuing work on FlowDesk. The context file is in the GitHub repo at `FLOWDESK_CONTEXT.md`."
 
 Claude can access the codebase via GitHub MCP (`Mister-97/mappa-pro`) and the DB via Supabase MCP (project ID `cafkoounmqnglhqokazr`).
+
+**Reminder for Claude:** Always work on the `dev` branch. Never commit directly to `main`.
