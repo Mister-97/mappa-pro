@@ -1,6 +1,6 @@
 # FlowDesk Project Context — Claude Handoff File
 > Paste this at the start of a new chat to get Claude up to speed instantly.
-> Last updated: 2026-02-26 — Fan detail panel insights fix, branch workflow introduced
+> Last updated: 2026-02-27 — Analytics fully wired, account status badge fixes
 
 ---
 
@@ -86,7 +86,7 @@
 | `routes/conversations.js` | Inbox list, single convo, send message, sync, lock/unlock |
 | `routes/analytics.js` | Overview stats, earnings, top-spenders, subscribers, spending — fully on Insights API |
 | `routes/fans.js` | Fan CRUD, notes, general notes, insights endpoint |
-| `routes/oauth.js` | Fanvue OAuth2 PKCE flow — callback stores tokens, redirects to `?oauth_success=true` |
+| `routes/oauth.js` | Fanvue OAuth2 PKCE flow — callback stores tokens, sets `needs_reconnect: false`, redirects to `?oauth_success=true` |
 | `routes/auth.js` | Signup, login, `/me` |
 | `middleware/auth.js` | JWT verify + fresh DB org fetch; AUTH_BYPASS mode injects DEV_USER |
 | `flowdesk-complete.html` | Single-file frontend SPA — all UI, no framework |
@@ -103,12 +103,28 @@
 - All documented Fanvue API endpoints implemented ✅
 - Analytics overview endpoint wired up ✅
 - Analytics rewrite — all 5 endpoints on Insights API ✅
+- Analytics fully wired in frontend — overview totals + per-account accordion with earnings breakdown, subscriber activity, top spenders ✅
 - Fan detail panel — full CSS + HTML + JS (300px right panel, 6 sections) ✅
 - Fan notes with categories ✅
 - General notes per fan ✅
 - Backend Fanvue Insights API functions in `services/fanvueApi.js` ✅
 - Backend `GET /api/fans/:fanId/insights` endpoint (returns normalised $/dollars) ✅
 - Fan detail panel spending data now displays correctly (fixes insights envelope unwrap bug) ✅
+- Account status badge: `is_active` checked before `needs_reconnect` in Overview, Accounts panel, and Reconnect button ✅
+- OAuth callback clears `needs_reconnect` flag on successful reconnect ✅
+
+---
+
+## Account Status Display Logic
+
+**Status priority order (most important first):**
+1. `is_active === true` → show "Active" (green)
+2. `needs_reconnect === true` → show "Needs reconnect" (red)
+3. Otherwise → show "Inactive" (gray)
+
+**Reconnect button:** shows only when `!is_active` (not just `needs_reconnect`).
+
+This logic is in `flowdesk-complete.html` in both `loadDashboard()` (Overview table) and `loadAccountsPanel()` (Accounts table).
 
 ---
 
@@ -170,26 +186,38 @@ The backend wraps the normalised data in an `insights` key:
 
 ---
 
+## Analytics Frontend (loadAnalytics + toggleAcctAnalytics)
+
+- **Period selector:** 7d / 30d / 90d / All time
+- **Overview totals:** Total Earnings, Subscribers, New Subscribers
+- **Per-account accordion:** click to expand each creator account
+  - Earnings Breakdown (by subscription/ppv/tips/messages/other)
+  - Subscriber Activity (new, cancelled, net change)
+  - Top Spenders table (rank, fan, gross, net)
+- Accordion lazy-loads details on first open, cached in `body.dataset.loaded`
+
+---
+
 ## Recent Commits
 
 | Commit | Description |
 |---|---|
+| `1a9dafe` | fix: prioritise is_active over needs_reconnect in status badges |
+| `7ae128b` | fix: clear needs_reconnect flag on successful OAuth callback |
+| `ba9a7e3` | feat: analytics - add All Time period, fix display bugs, add breakdown & top spenders |
 | `7dbd433` | fix: unwrap insights response before populating fan detail panel |
-| `f3a90fb` | Analytics rewrite — parsePeriod ISO 8601, subscriber field mapping fixed |
+| `f3a90fb` | fix: use ISO 8601 datetime for Fanvue Insights API date params |
 | `e5232b5` | Rewrite analytics.js — replace legacy endpoints with Insights API |
 | `b7a4406` | Fixed message send response, added PATCH nickname endpoint |
 | `f3f4019` | Fan detail panel — full CSS, HTML, JS |
-| `1e7fb12` | DB migration: add category to fan_notes; PATCH general-notes |
-| `ee1f04c` | Insights API functions in fanvueApi.js |
-| `5b5f095` | Added GET /api/fans/:fanId/insights endpoint |
 
 ---
 
 ## Pending / Next Work
 
-- Wire analytics endpoints to frontend charts/tables in `flowdesk-complete.html`
-- Add pagination controls for top-spenders and earnings tables
-- Consider caching Insights API responses (rate limits)
+- Add pagination controls for top-spenders (currently shows top 5)
+- Consider caching Insights API responses to avoid rate limits
+- Push `dev` → `main` when ready to go live with all recent fixes
 
 ---
 
