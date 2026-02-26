@@ -1,6 +1,6 @@
 # FlowDesk Project Context — Claude Handoff File
 > Paste this at the start of a new chat to get Claude up to speed instantly.
-> **Also read `memory.md`** for detailed code change notes and session history.
+> **Also read `spec.md`** for the product roadmap and **`memory.md`** for detailed code change notes and session history.
 > Last updated: 2026-02-26 18:00 — Sean dev branch setup, port config, memory system added
 
 ---
@@ -189,7 +189,7 @@ All monetary values in **cents** from Fanvue — converted to **dollars** in the
 - **Use timestamps** (YYYY-MM-DD HH:MM) when updating the "Last updated" line and changelog entries
 - **This file** is for high-level project context: what's working, pending work, key tables, env vars
 - **`memory.md`** is for detailed code change notes, session-by-session logs, and implementation specifics
-- **When resuming a session**, always read both `FLOWDESK_CONTEXT.md` and `memory.md`
+- **When resuming a session**, always read `FLOWDESK_CONTEXT.md`, `spec.md`, and `memory.md`
 
 ---
 
@@ -198,6 +198,6 @@ All monetary values in **cents** from Fanvue — converted to **dollars** in the
 Tell Claude:
 > "I'm continuing work on FlowDesk. Here's the context file: [paste this doc]"
 
-Claude should also read `memory.md` for detailed session notes and code changes.
+Claude should also read `spec.md` for the product roadmap and `memory.md` for detailed session notes and code changes.
 
 Claude can access the codebase via GitHub MCP (`Mister-97/mappa-pro`) and the DB via Supabase MCP (project ID `cafkoounmqnglhqokazr`).
