@@ -414,6 +414,37 @@
   }
   /* insights loading shimmer */
   .fdp-loading-text { color: var(--text3); font-size: 12px; font-style: italic; }
+
+  /* ── ANALYTICS BREAKDOWN ── */
+  .breakdown-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
+  }
+  .breakdown-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .breakdown-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .breakdown-value { font-size: 20px; font-weight: 700; color: var(--text); }
+  .breakdown-pct { font-size: 11px; color: var(--text3); }
+
+  /* analytics account section */
+  .acct-analytics-section {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .acct-analytics-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+  }
+  .acct-analytics-header:hover { background: var(--bg3); }
+  .acct-analytics-header .acct-name { font-size: 14px; font-weight: 600; flex: 1; }
+  .acct-analytics-header .acct-earn { color: var(--green); font-weight: 700; font-size: 14px; }
+  .acct-analytics-header .acct-subs { color: var(--text2); font-size: 12px; }
+  .acct-analytics-body { padding: 16px; display: none; }
+  .acct-analytics-body.open { display: block; }
+  .acct-analytics-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .acct-analytics-stat { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .acct-analytics-stat .lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .acct-analytics-stat .val { font-size: 18px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -662,23 +693,22 @@
           <div class="panel-title">Analytics</div>
           <div class="panel-subtitle">Earnings & subscriber stats across all accounts</div>
         </div>
-        <select id="analytics-period" onchange="loadAnalytics()" style="width:120px;">
+        <select id="analytics-period" onchange="loadAnalytics()" style="width:140px;">
           <option value="7d">Last 7 days</option>
           <option value="30d" selected>Last 30 days</option>
           <option value="90d">Last 90 days</option>
+          <option value="all">All time</option>
         </select>
       </div>
+
+      <!-- Overview totals -->
       <div class="stat-grid" id="analytics-totals">
         <div class="loading">Loading analytics...</div>
       </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Per-Account Breakdown</div></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Account</th><th>Earnings</th><th>Subscribers</th><th>Messages</th><th>Status</th></tr></thead>
-            <tbody id="analytics-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
-          </table>
-        </div>
+
+      <!-- Per-account sections (accordion) -->
+      <div id="analytics-accounts">
+        <!-- rendered by JS -->
       </div>
     </div>
 
@@ -851,6 +881,11 @@ function monthsAgo(ts) {
   if (months <= 0) return 'This month';
   if (months === 1) return '1 month ago';
   return months + ' months ago';
+}
+
+function capitalize(s) {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 // ─── AUTH ─────────────────────────────────────────────────
@@ -1060,37 +1095,181 @@ async function reconnectAccount(id) {
 async function loadAnalytics() {
   const period = document.getElementById('analytics-period').value;
   const totalsEl = document.getElementById('analytics-totals');
-  const tbody = document.getElementById('analytics-table');
+  const accountsEl = document.getElementById('analytics-accounts');
   totalsEl.innerHTML = '<div class="loading">Loading analytics...</div>';
-  tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+  accountsEl.innerHTML = '';
+
   try {
     const d = await api(`/api/analytics/overview?period=${period}`);
     const t = d.totals;
+    const periodLabel = { '7d': '7 days', '30d': '30 days', '90d': '90 days', 'all': 'all time' }[period] || period;
+
+    // ── Overview stat cards ──
     totalsEl.innerHTML = `
-      <div class="stat-card"><div class="stat-label">Total Earnings</div><div class="stat-value">${fmt(t.earnings)}</div><div class="stat-sub">${period}</div></div>
-      <div class="stat-card"><div class="stat-label">Subscribers</div><div class="stat-value">${fmtNum(t.subscribers)}</div></div>
-      <div class="stat-card"><div class="stat-label">New Subscribers</div><div class="stat-value">${fmtNum(t.newSubscribers)}</div></div>
-      <div class="stat-card"><div class="stat-label">Total Messages</div><div class="stat-value">${fmtNum(t.messages)}</div></div>
+      <div class="stat-card">
+        <div class="stat-label">Total Earnings</div>
+        <div class="stat-value">${fmt(t.earnings)}</div>
+        <div class="stat-sub">${periodLabel}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Subscribers</div>
+        <div class="stat-value">${fmtNum(t.subscribers)}</div>
+        <div class="stat-sub">active now</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">New Subscribers</div>
+        <div class="stat-value stat-up">+${fmtNum(t.newSubscribers)}</div>
+        <div class="stat-sub">${periodLabel}</div>
+      </div>
     `;
+
     if (!d.accounts?.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No account data available</td></tr>';
+      accountsEl.innerHTML = '<div class="empty">No account data available</div>';
       return;
     }
-    tbody.innerHTML = d.accounts.map(a => `
-      <tr>
-        <td><div style="display:flex;align-items:center;gap:8px;">
-          ${a.avatar_url ? `<img src="${a.avatar_url}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : ''}
-          <span style="font-weight:500">${a.label || a.fanvue_username || '—'}</span>
-        </div></td>
-        <td style="color:var(--green);font-weight:600">${fmt(a.earnings?.total)}</td>
-        <td>${fmtNum(a.stats?.subscriberCount)}</td>
-        <td>${fmtNum(a.stats?.messageCount)}</td>
-        <td>${a.error ? '<span class="badge badge-red">Error</span>' : '<span class="badge badge-green">OK</span>'}</td>
-      </tr>`).join('');
+
+    // ── Per-account sections (load overview row immediately, then lazy-load details) ──
+    accountsEl.innerHTML = d.accounts.map((a, idx) => {
+      const avatarHtml = a.avatar_url
+        ? `<img src="${a.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+        : `<div style="width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;">${(a.label||'?')[0]}</div>`;
+      const statusBadge = a.error
+        ? '<span class="badge badge-red">Error</span>'
+        : '<span class="badge badge-green">OK</span>';
+
+      return `
+        <div class="acct-analytics-section" id="acct-section-${idx}">
+          <div class="acct-analytics-header" onclick="toggleAcctAnalytics(${idx}, '${a.accountId}', '${period}')">
+            ${avatarHtml}
+            <div class="acct-name">${a.label || a.fanvue_username || '—'}</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="acct-earn">${fmt(a.earnings)}</div>
+              <div class="acct-subs">${fmtNum(a.subscriberCount)} subs</div>
+              ${a.newSubscribers > 0 ? `<div style="color:var(--green);font-size:12px;">+${a.newSubscribers} new</div>` : ''}
+              ${statusBadge}
+              <div style="color:var(--text3);font-size:12px;" id="acct-chevron-${idx}">▶</div>
+            </div>
+          </div>
+          <div class="acct-analytics-body" id="acct-body-${idx}">
+            <div class="loading">Loading details...</div>
+          </div>
+        </div>`;
+    }).join('');
+
   } catch (e) {
     totalsEl.innerHTML = `<div class="empty">Failed to load analytics: ${e.message}</div>`;
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">${e.message}</td></tr>`;
     toast('Analytics error: ' + e.message, 'error');
+  }
+}
+
+// Toggle accordion and lazy-load account details
+async function toggleAcctAnalytics(idx, accountId, period) {
+  const body = document.getElementById(`acct-body-${idx}`);
+  const chevron = document.getElementById(`acct-chevron-${idx}`);
+  const isOpen = body.classList.contains('open');
+
+  if (isOpen) {
+    body.classList.remove('open');
+    chevron.textContent = '▶';
+    return;
+  }
+
+  body.classList.add('open');
+  chevron.textContent = '▼';
+
+  // Only fetch if not already loaded
+  if (body.dataset.loaded) return;
+  body.dataset.loaded = '1';
+
+  try {
+    // Fetch earnings breakdown + top spenders + subscriber churn in parallel
+    const [earningsRes, spendersRes, subsRes] = await Promise.allSettled([
+      api(`/api/analytics/${accountId}/earnings?period=${period}`),
+      api(`/api/analytics/${accountId}/top-spenders?size=5`),
+      api(`/api/analytics/${accountId}/subscribers?period=${period}`)
+    ]);
+
+    const earnings = earningsRes.status === 'fulfilled' ? earningsRes.value : null;
+    const spenders = spendersRes.status === 'fulfilled' ? spendersRes.value : null;
+    const subs = subsRes.status === 'fulfilled' ? subsRes.value : null;
+
+    let html = '';
+
+    // ── Earnings breakdown ──
+    if (earnings?.breakdown && Object.keys(earnings.breakdown).length) {
+      const total = earnings.total || 1;
+      const sourceLabels = {
+        subscription: 'Subscriptions',
+        ppv: 'PPV',
+        tip: 'Tips',
+        message: 'Messages',
+        other: 'Other'
+      };
+      const breakdown = earnings.breakdown;
+      html += `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Earnings Breakdown</div>
+          <div class="breakdown-grid">
+            ${Object.entries(breakdown).sort((a,b) => b[1]-a[1]).map(([src, val]) => `
+              <div class="breakdown-card">
+                <div class="breakdown-label">${sourceLabels[src] || capitalize(src)}</div>
+                <div class="breakdown-value" style="color:var(--green)">${fmt(val)}</div>
+                <div class="breakdown-pct">${total > 0 ? Math.round((val/total)*100) : 0}% of total</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    // ── Subscriber churn ──
+    if (subs) {
+      const newS = subs.newSubscribers || 0;
+      const cancelled = subs.cancelledSubscribers || 0;
+      const net = newS - cancelled;
+      html += `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Subscriber Activity</div>
+          <div class="acct-analytics-stats">
+            <div class="acct-analytics-stat">
+              <div class="lbl">New</div>
+              <div class="val stat-up">+${fmtNum(newS)}</div>
+            </div>
+            <div class="acct-analytics-stat">
+              <div class="lbl">Cancelled</div>
+              <div class="val stat-down">-${fmtNum(cancelled)}</div>
+            </div>
+            <div class="acct-analytics-stat">
+              <div class="lbl">Net Change</div>
+              <div class="val ${net >= 0 ? 'stat-up' : 'stat-down'}">${net >= 0 ? '+' : ''}${fmtNum(net)}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ── Top spenders ──
+    if (spenders?.data?.length) {
+      html += `
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Top Spenders</div>
+          <table>
+            <thead><tr><th>#</th><th>Fan</th><th>Gross</th><th>Net</th></tr></thead>
+            <tbody>
+              ${spenders.data.slice(0,5).map((fan, i) => `
+                <tr>
+                  <td style="color:var(--text3);font-size:12px;">${i+1}</td>
+                  <td style="font-weight:500">${fan.username || fan.display_name || `Fan #${fan.fanId || i+1}`}</td>
+                  <td style="color:var(--text2)">${fmt(fan.gross)}</td>
+                  <td style="color:var(--green);font-weight:600">${fmt(fan.net)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    if (!html) html = '<div class="empty" style="padding:20px 0;">No detailed data available for this period</div>';
+    body.innerHTML = html;
+
+  } catch (e) {
+    body.innerHTML = `<div class="empty">Failed to load details: ${e.message}</div>`;
   }
 }
 
