@@ -190,11 +190,17 @@ router.get('/:accountId/top-spenders', authenticate, async (req, res, next) => {
 
     const result = await fanvueApi.getTopSpenders(account, { page: parseInt(page), size: parseInt(size) });
 
-    // Normalise cents → dollars
+    // Normalise cents → dollars, and flatten fan.user fields to the top level
+    // Fanvue API returns: { gross, net, messages, user: { id, username, display_name, avatar_url, ... } }
     const data = (result?.data || []).map(fan => ({
       ...fan,
       gross: toDollars(fan.gross),
-      net: toDollars(fan.net)
+      net: toDollars(fan.net),
+      // Hoist user fields so frontend can access fan.username / fan.display_name directly
+      fanId: fan.user?.id || fan.fanId,
+      username: fan.user?.username || fan.username,
+      display_name: fan.user?.display_name || fan.display_name,
+      avatar_url: fan.user?.avatar_url || fan.avatar_url
     }));
 
     res.json({ data, pagination: result?.pagination || {}, page });
