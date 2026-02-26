@@ -412,6 +412,8 @@
     display: none; margin-top: 12px; background: var(--bg3); border-radius: 8px;
     padding: 12px; font-size: 12px; color: var(--text2); line-height: 1.6;
   }
+  /* insights loading shimmer */
+  .fdp-loading-text { color: var(--text3); font-size: 12px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -836,6 +838,21 @@ function shortTime(ts) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+function fmtDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function monthsAgo(ts) {
+  if (!ts) return null;
+  const start = new Date(ts);
+  const now = new Date();
+  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  if (months <= 0) return 'This month';
+  if (months === 1) return '1 month ago';
+  return months + ' months ago';
+}
+
 // ─── AUTH ─────────────────────────────────────────────────
 let isSignup = false;
 function toggleAuth() {
@@ -1107,7 +1124,7 @@ function renderConvoList(convos) {
     const fan = c.fan || {};
     const name = fan.display_name || fan.username || 'Unknown fan';
     const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    return `<div class="conv-item${c.is_unread?' unread':''}${c.id===activeConvoId?' active':''}" onclick="openConvo('${c.id}','${encodeURIComponent(name)}')">
+    return `<div class="conv-item${c.is_unread?' unread':''}${c.id===activeConvoId?' active':''}" onclick="openConvo('${c.id}','${encodeName(name)}')">
       <div class="conv-avatar">${fan.avatar_url ? `<img src="${fan.avatar_url}" onerror="this.parentElement.textContent='${initials}'">` : initials}</div>
       <div class="conv-info">
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -1121,6 +1138,7 @@ function renderConvoList(convos) {
   }).join('');
 }
 
+function encodeName(name) { return encodeURIComponent(name); }
 function filterConvos() { renderConvoList(inboxConvos); }
 
 function setFilter(btn, filter) {
@@ -1152,7 +1170,7 @@ async function openConvo(id, encodedName) {
     const d = await api(`/api/conversations/${id}`);
     activeConvoData = d;
     const fan = d.conversation?.fan;
-    activeFanId = fan?.id || fan?.fanvue_user_id || null;
+    activeFanId = fan?.id || null;
     main.querySelector('.convo-fan-meta').textContent =
       `@${fan?.username || '—'} · ${fan?.subscription_status || ''} · Spend: ${fmt(fan?.spend_30d)} (30d)`;
     const msgs = d.messages || [];
@@ -1169,42 +1187,22 @@ async function openConvo(id, encodedName) {
       }).join('');
       box.scrollTop = box.scrollHeight;
     }
-    // Show fan detail panel
+    // Show fan detail panel with DB data first, then fetch live insights
     showFanDetailPanel(d);
   } catch (e) {
     main.querySelector('#msgs-box').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
   }
 }
 
+// ─── FAN DETAIL PANEL ─────────────────────────────────────
+
 function showFanDetailPanel(data) {
   const panel = document.getElementById('fan-detail-panel');
   panel.classList.add('visible');
   const fan = data.conversation?.fan || {};
 
-  // Spending
-  document.getElementById('fdp-total-spent').textContent = fmt(fan.lifetime_spend || 0);
-  if (fan.subscribed_at) {
-    const d = new Date(fan.subscribed_at);
-    document.getElementById('fdp-since').textContent = 'Since ' + d.toLocaleDateString([], { month: 'short', year: 'numeric' });
-  } else {
-    document.getElementById('fdp-since').textContent = '';
-  }
-  if (fan.last_spend_at) {
-    document.getElementById('fdp-last-spend').textContent = timeAgo(fan.last_spend_at);
-  } else {
-    document.getElementById('fdp-last-spend').textContent = 'N/A';
-  }
-  document.getElementById('fdp-ppv-total').textContent = fmt(fan.ppv_total || 0);
-  document.getElementById('fdp-ppv-avg').textContent = fmt(fan.ppv_avg || 0) + ' avg';
-  document.getElementById('fdp-tip-total').textContent = fmt(fan.tip_total || 0);
-  document.getElementById('fdp-tip-avg').textContent = fmt(fan.tip_avg || 0) + ' avg';
-
-  // Subscription
-  const fanType = fan.fan_type || fan.subscription_status || 'Follower';
-  document.getElementById('fdp-fan-type').textContent = fanType.charAt(0).toUpperCase() + fanType.slice(1);
-  document.getElementById('fdp-sub-cost').textContent = fan.subscription_price ? fmt(fan.subscription_price) : '-';
-  document.getElementById('fdp-sub-duration').textContent = fan.subscription_duration || '1 month';
-  document.getElementById('fdp-sub-renew').textContent = fan.auto_renew != null ? (fan.auto_renew ? 'Yes' : 'No') : '-';
+  // Populate with DB fields first (instant)
+  populatePanelFromDb(fan);
 
   // Nickname
   const nickname = fan.nickname || '';
@@ -1221,6 +1219,85 @@ function showFanDetailPanel(data) {
   // Summary reset
   document.getElementById('fdp-summary-result').style.display = 'none';
   document.getElementById('fdp-summary-result').textContent = '';
+
+  // Fetch live Fanvue Insights if we have a fan ID
+  if (activeFanId) {
+    setInsightsLoading(true);
+    api(`/api/fans/${activeFanId}/insights`)
+      .then(insights => populatePanelFromInsights(insights))
+      .catch(() => { /* silently keep DB values */ })
+      .finally(() => setInsightsLoading(false));
+  }
+}
+
+function populatePanelFromDb(fan) {
+  // Spending — from DB fields
+  document.getElementById('fdp-total-spent').textContent = fmt(fan.lifetime_spend || 0);
+  if (fan.subscribed_at) {
+    const d = new Date(fan.subscribed_at);
+    document.getElementById('fdp-since').textContent = 'Since ' + d.toLocaleDateString([], { month: 'short', year: 'numeric' });
+  } else {
+    document.getElementById('fdp-since').textContent = '';
+  }
+  document.getElementById('fdp-last-spend').textContent = fan.last_spend_at ? timeAgo(fan.last_spend_at) : 'N/A';
+  document.getElementById('fdp-ppv-total').textContent = fmt(fan.ppv_total || 0);
+  document.getElementById('fdp-ppv-avg').textContent = fmt(fan.ppv_avg || 0) + ' avg';
+  document.getElementById('fdp-tip-total').textContent = fmt(fan.tip_total || 0);
+  document.getElementById('fdp-tip-avg').textContent = fmt(fan.tip_avg || 0) + ' avg';
+
+  // Subscription — from DB fields
+  const fanType = fan.fan_type || fan.subscription_status || 'Follower';
+  document.getElementById('fdp-fan-type').textContent = fanType.charAt(0).toUpperCase() + fanType.slice(1);
+  document.getElementById('fdp-sub-cost').textContent = fan.subscription_price ? fmt(fan.subscription_price) : '-';
+  document.getElementById('fdp-sub-duration').textContent = fan.subscription_duration || '1 month';
+  document.getElementById('fdp-sub-renew').textContent = fan.auto_renew != null ? (fan.auto_renew ? 'Yes' : 'No') : '-';
+}
+
+function populatePanelFromInsights(ins) {
+  if (!ins) return;
+
+  // Spending
+  document.getElementById('fdp-total-spent').textContent = fmt(ins.lifetime_spend);
+  if (ins.subscription_started_at) {
+    const d = new Date(ins.subscription_started_at);
+    document.getElementById('fdp-since').textContent = 'Since ' + d.toLocaleDateString([], { month: 'short', year: 'numeric' });
+  }
+  document.getElementById('fdp-last-spend').textContent = ins.last_purchase_at ? timeAgo(ins.last_purchase_at) : 'N/A';
+  document.getElementById('fdp-ppv-total').textContent = fmt(ins.ppv_total);
+  document.getElementById('fdp-ppv-avg').textContent = ''; // not returned by API
+  document.getElementById('fdp-tip-total').textContent = fmt(ins.tip_total);
+  document.getElementById('fdp-tip-avg').textContent = ''; // not returned by API
+
+  // Subscription
+  if (ins.fan_type) {
+    const label = ins.fan_type.charAt(0).toUpperCase() + ins.fan_type.slice(1);
+    document.getElementById('fdp-fan-type').textContent = label;
+    // Colour the badge by type
+    const badge = document.getElementById('fdp-fan-type');
+    badge.style.background = ins.fan_type === 'subscriber' ? 'var(--accent)' :
+                             ins.fan_type === 'fan'        ? 'var(--blue)'  :
+                             ins.fan_type === 'blocked'    ? 'var(--red)'   : 'var(--text3)';
+  }
+  document.getElementById('fdp-sub-cost').textContent = fmt(ins.subscription_total) || '-';
+  // Duration: calculate from started_at → renews_at
+  if (ins.subscription_started_at && ins.subscription_renews_at) {
+    const start = new Date(ins.subscription_started_at);
+    const renew = new Date(ins.subscription_renews_at);
+    const diffDays = Math.round((renew - start) / (1000*60*60*24));
+    document.getElementById('fdp-sub-duration').textContent = diffDays <= 32 ? '1 month' : diffDays + ' days';
+  }
+  document.getElementById('fdp-sub-renew').textContent =
+    ins.auto_renew != null ? (ins.auto_renew ? `Yes — renews ${fmtDate(ins.subscription_renews_at)}` : 'No') : '-';
+}
+
+function setInsightsLoading(loading) {
+  // Subtly dim the spending value while loading, restore after
+  const el = document.getElementById('fdp-total-spent');
+  if (loading) {
+    el.style.opacity = '0.4';
+  } else {
+    el.style.opacity = '1';
+  }
 }
 
 function renderFanNotes(notes) {
