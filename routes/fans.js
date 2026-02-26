@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const supabase = require('../config/supabase');
 const { authenticate } = require('../middleware/auth');
+const fanvueApi = require('../services/fanvueApi');
 
 const router = express.Router();
 
@@ -66,6 +67,78 @@ router.get('/', authenticate, async (req, res, next) => {
 
     res.json({ fans: filtered, total: count, page: Number(page), limit: Number(limit) });
   } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/fans/:fanId/insights
+ * Fetch real-time spending + subscription data from Fanvue Insights API
+ * Returns normalized data ready for the fan detail panel
+ */
+router.get('/:fanId/insights', authenticate, async (req, res, next) => {
+  try {
+    // Load fan with account credentials
+    const { data: fan, error: fanError } = await supabase
+      .from('fans')
+      .select('id, fanvue_fan_id, account_id')
+      .eq('id', req.params.fanId)
+      .eq('organization_id', req.user.organization_id)
+      .single();
+
+    if (fanError || !fan) return res.status(404).json({ error: 'Fan not found' });
+    if (!fan.fanvue_fan_id) return res.status(422).json({ error: 'Fan has no Fanvue UUID' });
+
+    // Load account with credentials
+    const { data: account, error: accountError } = await supabase
+      .from('connected_accounts')
+      .select('*')
+      .eq('id', fan.account_id)
+      .eq('organization_id', req.user.organization_id)
+      .single();
+
+    if (accountError || !account) return res.status(404).json({ error: 'Account not found' });
+
+    // Call Fanvue Insights API
+    const raw = await fanvueApi.getFanInsights(account, fan.fanvue_fan_id);
+
+    // Normalize: amounts are in cents, convert to dollars
+    const spending = raw.spending || {};
+    const subscription = raw.subscription || {};
+    const sources = spending.sources || {};
+
+    const insights = {
+      // Fan status
+      fan_type: raw.status || null, // subscriber | expired | follower | not_contactable
+
+      // Spending totals (cents → dollars)
+      lifetime_spend: spending.total?.gross != null ? spending.total.gross / 100 : null,
+      last_purchase_at: spending.lastPurchaseAt || null,
+      max_single_payment: spending.maxSinglePayment?.gross != null ? spending.maxSinglePayment.gross / 100 : null,
+
+      // Spending by source (cents → dollars)
+      ppv_total: sources.message?.gross != null ? sources.message.gross / 100 : null,
+      tip_total: sources.tip?.gross != null ? sources.tip.gross / 100 : null,
+      subscription_total: sources.subscription?.gross != null ? sources.subscription.gross / 100 : null,
+      renewal_total: sources.renewal?.gross != null ? sources.renewal.gross / 100 : null,
+      post_total: sources.post?.gross != null ? sources.post.gross / 100 : null,
+
+      // Subscription info
+      subscription_status: raw.status || null,
+      subscription_started_at: subscription.createdAt || null,
+      subscription_renews_at: subscription.renewsAt || null,
+      auto_renew: subscription.autoRenewalEnabled ?? null,
+
+      // Raw for debugging
+      _raw: raw
+    };
+
+    res.json({ insights });
+  } catch (err) {
+    // If the Fanvue API returns a 404 the fan may not exist on their side
+    if (err.response?.status === 404) {
+      return res.status(404).json({ error: 'Fan not found on Fanvue' });
+    }
     next(err);
   }
 });
