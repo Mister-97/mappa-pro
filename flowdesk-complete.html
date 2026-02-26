@@ -207,7 +207,7 @@
   }
   .conv-item.unread .conv-name { color: var(--accent); }
 
-  .convo-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .convo-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
   .convo-topbar {
     padding: 14px 20px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
@@ -288,6 +288,130 @@
   }
   input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   select { cursor: pointer; }
+
+  /* ── FAN DETAIL PANEL ── */
+  .fan-detail-panel {
+    width: 300px; flex-shrink: 0; border-left: 1px solid var(--border);
+    background: var(--bg2); display: none; flex-direction: column;
+    overflow-y: auto; height: 100%;
+  }
+  .fan-detail-panel.visible { display: flex; }
+  .fdp-section {
+    padding: 16px; border-bottom: 1px solid var(--border);
+  }
+  .fdp-section-title {
+    font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .fdp-spend-cards {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+  }
+  .fdp-spend-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px;
+  }
+  .fdp-card-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .fdp-card-value { font-size: 20px; font-weight: 700; color: var(--text); }
+  .fdp-card-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .fdp-stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .fdp-stat-row:last-child { border-bottom: none; }
+  .fdp-stat-label { font-size: 13px; color: var(--text2); }
+  .fdp-stat-value { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; }
+  .fdp-stat-sub { font-size: 11px; color: var(--text3); }
+  .fdp-fan-type-badge {
+    background: var(--blue); color: #fff; font-size: 12px; font-weight: 600;
+    padding: 3px 12px; border-radius: 20px;
+  }
+  .fdp-nickname-display {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 13px; color: var(--text2); min-height: 40px;
+  }
+  .fdp-nickname-edit { display: none; gap: 6px; }
+  .fdp-nickname-edit input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--accent); border-radius: 8px;
+    padding: 8px 10px; color: var(--text); font-size: 13px; outline: none;
+  }
+  .fdp-nickname-save-btn {
+    background: var(--accent); border: none; border-radius: 8px; padding: 8px 12px;
+    color: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .fdp-nickname-cancel-btn {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    color: var(--text2); font-size: 12px; cursor: pointer;
+  }
+  .fdp-edit-btn {
+    background: transparent; border: none; color: var(--text2); font-size: 13px;
+    cursor: pointer; padding: 2px 6px; border-radius: 4px;
+  }
+  .fdp-edit-btn:hover { color: var(--text); background: var(--bg3); }
+  .fdp-beta-badge {
+    background: #d946ef; color: #fff; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+  }
+  .fdp-notes-filters { display: flex; gap: 6px; margin-bottom: 10px; }
+  .fdp-notes-filter-btn {
+    padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--text2); font-size: 12px; cursor: pointer;
+  }
+  .fdp-notes-filter-btn.active {
+    background: #166534; border-color: var(--green); color: var(--green);
+  }
+  .fdp-ask-input-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; margin-bottom: 8px;
+  }
+  .fdp-ask-input-wrap span { color: var(--text3); font-size: 14px; }
+  .fdp-ask-input {
+    flex: 1; background: transparent; border: none; color: var(--text2); font-size: 13px;
+    outline: none;
+  }
+  .fdp-ask-input::placeholder { color: var(--text3); }
+  .fdp-notes-add-wrap {
+    position: relative; margin-bottom: 12px;
+  }
+  .fdp-notes-add-input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 40px 10px 12px; color: var(--text2); font-size: 13px; outline: none;
+  }
+  .fdp-notes-add-input::placeholder { color: var(--text3); }
+  .fdp-notes-add-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; color: var(--text2); font-size: 18px;
+    cursor: pointer; line-height: 1; padding: 4px;
+  }
+  .fdp-notes-add-btn:hover { color: var(--text); }
+  .fdp-notes-empty { color: var(--text3); font-size: 13px; text-align: center; padding: 16px 0; }
+  .fdp-note-item {
+    padding: 8px 10px; background: var(--bg3); border-radius: 8px;
+    font-size: 12px; color: var(--text2); margin-bottom: 6px; line-height: 1.5;
+  }
+  .fdp-notes-textarea {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; color: var(--text2); font-size: 13px; outline: none;
+    resize: vertical; min-height: 100px; font-family: inherit;
+  }
+  .fdp-notes-textarea:focus { border-color: var(--accent); }
+  .fdp-summary-period-btn {
+    width: 100%; background: transparent; border: 1px solid var(--border); border-radius: 24px;
+    padding: 10px; color: var(--text); font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-bottom: 8px; transition: border-color 0.15s;
+  }
+  .fdp-summary-period-btn:hover { border-color: var(--text2); }
+  .fdp-generate-btn {
+    width: 100%; background: #fff; border: none; border-radius: 24px;
+    padding: 10px; color: #111; font-size: 14px; font-weight: 700;
+    cursor: pointer; margin-bottom: 10px; transition: background 0.15s;
+  }
+  .fdp-generate-btn:hover { background: #e5e5e5; }
+  .fdp-summary-hint { font-size: 12px; color: var(--text3); line-height: 1.5; }
+  .fdp-summary-result {
+    display: none; margin-top: 12px; background: var(--bg3); border-radius: 8px;
+    padding: 12px; font-size: 12px; color: var(--text2); line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -428,6 +552,105 @@
           <div>Select a conversation</div>
         </div>
       </div>
+      <!-- Fan Detail Panel -->
+      <div class="fan-detail-panel" id="fan-detail-panel">
+        <!-- Spending behavior -->
+        <div class="fdp-section">
+          <div class="fdp-section-title">Spending behavior</div>
+          <div class="fdp-spend-cards">
+            <div class="fdp-spend-card">
+              <div class="fdp-card-label">Total spent</div>
+              <div class="fdp-card-value" id="fdp-total-spent">$0.00</div>
+              <div class="fdp-card-sub" id="fdp-since">—</div>
+            </div>
+            <div class="fdp-spend-card">
+              <div class="fdp-card-label">Last spend</div>
+              <div class="fdp-card-value" id="fdp-last-spend" style="font-size:15px;margin-top:4px;">N/A</div>
+            </div>
+          </div>
+          <div class="fdp-stat-row">
+            <div class="fdp-stat-label">Total PPV</div>
+            <div class="fdp-stat-value">
+              <div id="fdp-ppv-total">$0.00</div>
+              <div class="fdp-stat-sub" id="fdp-ppv-avg">$0.00 avg</div>
+            </div>
+          </div>
+          <div class="fdp-stat-row">
+            <div class="fdp-stat-label">Total Tip</div>
+            <div class="fdp-stat-value">
+              <div id="fdp-tip-total">$0.00</div>
+              <div class="fdp-stat-sub" id="fdp-tip-avg">$0.00 avg</div>
+            </div>
+          </div>
+        </div>
+        <!-- Subscription -->
+        <div class="fdp-section">
+          <div class="fdp-section-title">Subscription</div>
+          <div class="fdp-stat-row">
+            <div class="fdp-stat-label">Fan type</div>
+            <div><span class="fdp-fan-type-badge" id="fdp-fan-type">Follower</span></div>
+          </div>
+          <div class="fdp-stat-row">
+            <div class="fdp-stat-label">Cost</div>
+            <div class="fdp-stat-value" id="fdp-sub-cost">-</div>
+          </div>
+          <div class="fdp-stat-row">
+            <div class="fdp-stat-label">Duration</div>
+            <div class="fdp-stat-value" id="fdp-sub-duration">1 month</div>
+          </div>
+          <div class="fdp-stat-row">
+            <div class="fdp-stat-label">Auto-renewal</div>
+            <div class="fdp-stat-value" id="fdp-sub-renew">-</div>
+          </div>
+        </div>
+        <!-- Nickname -->
+        <div class="fdp-section">
+          <div class="fdp-section-title">
+            Nickname
+            <button class="fdp-edit-btn" onclick="toggleNicknameEdit()">Edit</button>
+          </div>
+          <div class="fdp-nickname-display" id="fdp-nickname-display"></div>
+          <div class="fdp-nickname-edit" id="fdp-nickname-edit" style="display:none;">
+            <input type="text" id="fdp-nickname-input" placeholder="Enter nickname..." />
+            <button class="fdp-nickname-save-btn" onclick="saveNickname()">Save</button>
+            <button class="fdp-nickname-cancel-btn" onclick="toggleNicknameEdit()">✕</button>
+          </div>
+        </div>
+        <!-- Notes (Beta) -->
+        <div class="fdp-section">
+          <div class="fdp-section-title">
+            Notes
+            <span class="fdp-beta-badge">Beta</span>
+          </div>
+          <div class="fdp-notes-filters">
+            <button class="fdp-notes-filter-btn active" onclick="setNoteFilter(this,'all')">All</button>
+            <button class="fdp-notes-filter-btn" onclick="setNoteFilter(this,'must_know')">Must know</button>
+            <button class="fdp-notes-filter-btn" onclick="setNoteFilter(this,'top_facts')">Top facts</button>
+          </div>
+          <div class="fdp-ask-input-wrap">
+            <span>🔍</span>
+            <input class="fdp-ask-input" id="fdp-ask-input" placeholder="Ask anything about this fan..." />
+          </div>
+          <div class="fdp-notes-add-wrap">
+            <input class="fdp-notes-add-input" id="fdp-note-input" placeholder="Type notes about this fan..." onkeydown="if(event.key==='Enter')addFanNote()" />
+            <button class="fdp-notes-add-btn" onclick="addFanNote()">+</button>
+          </div>
+          <div id="fdp-notes-list"><div class="fdp-notes-empty">No facts found</div></div>
+        </div>
+        <!-- Notes textarea -->
+        <div class="fdp-section">
+          <div class="fdp-section-title">Notes</div>
+          <textarea class="fdp-notes-textarea" id="fdp-notes-textarea" placeholder="" onblur="saveFanNotes()"></textarea>
+        </div>
+        <!-- Chat summary -->
+        <div class="fdp-section">
+          <div class="fdp-section-title">Chat summary</div>
+          <button class="fdp-summary-period-btn" id="fdp-period-btn" onclick="cycleSummaryPeriod()">Last 24 hours</button>
+          <button class="fdp-generate-btn" onclick="generateChatSummary()">Generate summary</button>
+          <div class="fdp-summary-hint">Click "Generate summary" to create a summary of your chat history with this fan.</div>
+          <div class="fdp-summary-result" id="fdp-summary-result"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ── ANALYTICS ── -->
@@ -550,6 +773,12 @@ let accounts = [];
 let inboxFilter = 'all';
 let inboxConvos = [];
 let activeConvoId = null;
+let activeFanId = null;
+let activeConvoData = null;
+let nicknameEditMode = false;
+let summaryPeriods = ['Last 24 hours', 'Last 7 days', 'Last 30 days'];
+let currentSummaryPeriod = 0;
+let activeNoteFilter = 'all';
 
 // ─── HELPERS ─────────────────────────────────────────────
 async function api(path, opts = {}) {
@@ -770,7 +999,7 @@ async function loadAccountsPanel() {
     accounts = d.accounts || d || [];
     const tbody = document.getElementById('accounts-table');
     if (!accounts.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No accounts connected. Click "+ Connect Account" to add one.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No accounts connected. Click "+  Connect Account" to add one.</td></tr>';
       return;
     }
     tbody.innerHTML = accounts.map(a => `
@@ -921,7 +1150,9 @@ async function openConvo(id, encodedName) {
   });
   try {
     const d = await api(`/api/conversations/${id}`);
+    activeConvoData = d;
     const fan = d.conversation?.fan;
+    activeFanId = fan?.id || fan?.fanvue_user_id || null;
     main.querySelector('.convo-fan-meta').textContent =
       `@${fan?.username || '—'} · ${fan?.subscription_status || ''} · Spend: ${fmt(fan?.spend_30d)} (30d)`;
     const msgs = d.messages || [];
@@ -938,9 +1169,153 @@ async function openConvo(id, encodedName) {
       }).join('');
       box.scrollTop = box.scrollHeight;
     }
+    // Show fan detail panel
+    showFanDetailPanel(d);
   } catch (e) {
     main.querySelector('#msgs-box').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
   }
+}
+
+function showFanDetailPanel(data) {
+  const panel = document.getElementById('fan-detail-panel');
+  panel.classList.add('visible');
+  const fan = data.conversation?.fan || {};
+
+  // Spending
+  document.getElementById('fdp-total-spent').textContent = fmt(fan.lifetime_spend || 0);
+  if (fan.subscribed_at) {
+    const d = new Date(fan.subscribed_at);
+    document.getElementById('fdp-since').textContent = 'Since ' + d.toLocaleDateString([], { month: 'short', year: 'numeric' });
+  } else {
+    document.getElementById('fdp-since').textContent = '';
+  }
+  if (fan.last_spend_at) {
+    document.getElementById('fdp-last-spend').textContent = timeAgo(fan.last_spend_at);
+  } else {
+    document.getElementById('fdp-last-spend').textContent = 'N/A';
+  }
+  document.getElementById('fdp-ppv-total').textContent = fmt(fan.ppv_total || 0);
+  document.getElementById('fdp-ppv-avg').textContent = fmt(fan.ppv_avg || 0) + ' avg';
+  document.getElementById('fdp-tip-total').textContent = fmt(fan.tip_total || 0);
+  document.getElementById('fdp-tip-avg').textContent = fmt(fan.tip_avg || 0) + ' avg';
+
+  // Subscription
+  const fanType = fan.fan_type || fan.subscription_status || 'Follower';
+  document.getElementById('fdp-fan-type').textContent = fanType.charAt(0).toUpperCase() + fanType.slice(1);
+  document.getElementById('fdp-sub-cost').textContent = fan.subscription_price ? fmt(fan.subscription_price) : '-';
+  document.getElementById('fdp-sub-duration').textContent = fan.subscription_duration || '1 month';
+  document.getElementById('fdp-sub-renew').textContent = fan.auto_renew != null ? (fan.auto_renew ? 'Yes' : 'No') : '-';
+
+  // Nickname
+  const nickname = fan.nickname || '';
+  document.getElementById('fdp-nickname-display').textContent = nickname;
+  document.getElementById('fdp-nickname-input').value = nickname;
+  nicknameEditMode = false;
+  document.getElementById('fdp-nickname-display').style.display = 'block';
+  document.getElementById('fdp-nickname-edit').style.display = 'none';
+
+  // Notes
+  renderFanNotes(fan.fan_notes || []);
+  document.getElementById('fdp-notes-textarea').value = fan.notes || '';
+
+  // Summary reset
+  document.getElementById('fdp-summary-result').style.display = 'none';
+  document.getElementById('fdp-summary-result').textContent = '';
+}
+
+function renderFanNotes(notes) {
+  const list = document.getElementById('fdp-notes-list');
+  const filtered = activeNoteFilter === 'all' ? notes
+    : notes.filter(n => n.category === activeNoteFilter);
+  if (!filtered.length) {
+    list.innerHTML = '<div class="fdp-notes-empty">No facts found</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(n =>
+    `<div class="fdp-note-item">${escHtml(n.content || n.text || String(n))}</div>`
+  ).join('');
+}
+
+function setNoteFilter(btn, filter) {
+  activeNoteFilter = filter;
+  document.querySelectorAll('.fdp-notes-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const fan = activeConvoData?.conversation?.fan || {};
+  renderFanNotes(fan.fan_notes || []);
+}
+
+function toggleNicknameEdit() {
+  nicknameEditMode = !nicknameEditMode;
+  document.getElementById('fdp-nickname-display').style.display = nicknameEditMode ? 'none' : 'block';
+  document.getElementById('fdp-nickname-edit').style.display = nicknameEditMode ? 'flex' : 'none';
+  if (nicknameEditMode) document.getElementById('fdp-nickname-input').focus();
+}
+
+async function saveNickname() {
+  if (!activeConvoId) return;
+  const nickname = document.getElementById('fdp-nickname-input').value.trim();
+  try {
+    await api(`/api/conversations/${activeConvoId}/nickname`, { method: 'PATCH', body: { nickname } });
+    document.getElementById('fdp-nickname-display').textContent = nickname;
+    toggleNicknameEdit();
+    toast('Nickname saved', 'success');
+  } catch (e) {
+    toast('Failed to save nickname: ' + e.message, 'error');
+  }
+}
+
+async function addFanNote() {
+  if (!activeFanId) return;
+  const input = document.getElementById('fdp-note-input');
+  const text = input.value.trim();
+  if (!text) return;
+  try {
+    await api(`/api/fans/${activeFanId}/notes`, { method: 'POST', body: { content: text, category: 'all' } });
+    input.value = '';
+    const fan = activeConvoData?.conversation?.fan || {};
+    const notes = fan.fan_notes || [];
+    notes.push({ content: text, category: 'all' });
+    fan.fan_notes = notes;
+    renderFanNotes(notes);
+    toast('Note added', 'success');
+  } catch (e) {
+    toast('Failed to add note: ' + e.message, 'error');
+  }
+}
+
+async function saveFanNotes() {
+  if (!activeFanId) return;
+  const notes = document.getElementById('fdp-notes-textarea').value;
+  try {
+    await api(`/api/fans/${activeFanId}/general-notes`, { method: 'PATCH', body: { notes } });
+  } catch (e) {
+    // silent fail on blur save
+  }
+}
+
+function cycleSummaryPeriod() {
+  currentSummaryPeriod = (currentSummaryPeriod + 1) % summaryPeriods.length;
+  document.getElementById('fdp-period-btn').textContent = summaryPeriods[currentSummaryPeriod];
+}
+
+function generateChatSummary() {
+  if (!activeConvoData) return;
+  const msgs = activeConvoData.messages || [];
+  const periodHours = [24, 24*7, 24*30][currentSummaryPeriod];
+  const since = Date.now() - periodHours * 3600 * 1000;
+  const recent = msgs.filter(m => new Date(m.sent_at).getTime() > since);
+  const resultEl = document.getElementById('fdp-summary-result');
+  if (!recent.length) {
+    resultEl.textContent = 'No messages in this time period.';
+    resultEl.style.display = 'block';
+    return;
+  }
+  const inbound = recent.filter(m => m.direction === 'inbound');
+  const outbound = recent.filter(m => m.direction === 'outbound');
+  const summary = `${summaryPeriods[currentSummaryPeriod]}: ${recent.length} messages (${inbound.length} from fan, ${outbound.length} from you). ` +
+    (inbound.length ? `Last fan message: "${(inbound[inbound.length-1].content || '').substring(0, 80)}..."` : '');
+  resultEl.textContent = summary;
+  resultEl.style.display = 'block';
 }
 
 async function sendMsg(convoId) {
