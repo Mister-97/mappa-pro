@@ -178,10 +178,14 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
 
           // Upsert in batches of 50
           for (let i = 0; i < toUpsert.length; i += 50) {
-            await supabase
-              .from('messages')
-              .upsert(toUpsert.slice(i, i + 50), { onConflict: 'fanvue_message_id' })
-              .catch(err => console.error('[ConvRoute] Message cache error:', err.message));
+            try {
+              const { error: upsertErr } = await supabase
+                .from('messages')
+                .upsert(toUpsert.slice(i, i + 50), { onConflict: 'fanvue_message_id' });
+              if (upsertErr) console.error('[ConvRoute] Message cache error:', upsertErr.message);
+            } catch (upsertEx) {
+              console.error('[ConvRoute] Message cache exception:', upsertEx.message);
+            }
           }
         }
       } catch (apiErr) {
