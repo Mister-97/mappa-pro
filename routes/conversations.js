@@ -304,6 +304,52 @@ router.patch('/:conversationId', authenticate, async (req, res, next) => {
   }
 });
 
+/**
+ * PATCH /api/conversations/:conversationId/nickname
+ * Update the fan's nickname on Fanvue (via chat update API)
+ */
+router.patch('/:conversationId/nickname', authenticate, async (req, res, next) => {
+  try {
+    const { nickname } = req.body;
+    if (typeof nickname !== 'string') return res.status(400).json({ error: 'nickname required' });
+
+    // Load conversation with account credentials and fan UUID
+    const { data: conv, error } = await supabase
+      .from('conversations')
+      .select('fanvue_thread_id, account:connected_accounts(id, access_token_enc, refresh_token_enc, token_expires_at), fan:fans(id)')
+      .eq('id', req.params.conversationId)
+      .eq('organization_id', req.user.organization_id)
+      .single();
+
+    if (error || !conv) return res.status(404).json({ error: 'Conversation not found' });
+
+    const fanvueUserUuid = conv.fanvue_thread_id;
+    if (!fanvueUserUuid) return res.status(400).json({ error: 'No Fanvue thread ID' });
+
+    // Update nickname on Fanvue
+    try {
+      await fanvueApi.updateChat(conv.account, fanvueUserUuid, { nickname: nickname || null });
+    } catch (apiErr) {
+      console.error('[NicknameRoute] Fanvue updateChat failed:', apiErr.message);
+      // Don't fail — just log it; we still save locally
+    }
+
+    // Also store nickname in our fans table if column exists
+    if (conv.fan?.id) {
+      await supabase
+        .from('fans')
+        .update({ nickname, updated_at: new Date().toISOString() })
+        .eq('id', conv.fan.id)
+        .eq('organization_id', req.user.organization_id)
+        .catch(() => {}); // ignore if column doesn't exist
+    }
+
+    res.json({ message: 'Nickname updated', nickname });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ============================================================
 // MESSAGES
 // ============================================================
@@ -341,7 +387,8 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
           price: isPpv && ppvPrice ? ppvPrice : null
         }
       );
-      fanvueMessageId = fanvueResponse?.uuid || null;
+      // API spec: 201 response returns { messageUuid: "..." }
+      fanvueMessageId = fanvueResponse?.messageUuid || fanvueResponse?.uuid || null;
     } catch (apiErr) {
       console.error('Fanvue send error:', apiErr.message);
     }
