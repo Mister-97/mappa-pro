@@ -5,6 +5,14 @@ const fanvueApi = require('../services/fanvueApi');
 
 const router = express.Router();
 
+// Disable caching for all analytics routes
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 /**
  * Helper: cents → dollars
  */
@@ -53,6 +61,11 @@ router.get('/overview', authenticate, async (req, res, next) => {
         ]);
 
         const stats = statsResult.status === 'fulfilled' ? statsResult.value : null;
+
+        // Log any errors to help debug
+        if (statsResult.status === 'rejected') console.error('[Analytics] getStats error:', statsResult.reason?.message);
+        if (earningsResult.status === 'rejected') console.error('[Analytics] getInsightsEarnings error:', earningsResult.reason?.message);
+        if (subscribersResult.status === 'rejected') console.error('[Analytics] getInsightsSubscribers error:', subscribersResult.reason?.message);
 
         // Sum earnings from insights data array
         let earningsTotal = 0;
