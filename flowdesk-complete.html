@@ -995,7 +995,7 @@ async function loadDashboard() {
             <div><div style="font-weight:500;">${a.label || a.fanvue_display_name || a.fanvue_username}</div>
             <div style="font-size:11px;color:var(--text3);">@${a.fanvue_username||''}</div></div>
           </div></td>
-          <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+          <td>${a.is_active ? '<span class="badge badge-green">Active</span>' : a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
           <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
         </tr>`).join('');
     }
@@ -1061,10 +1061,10 @@ async function loadAccountsPanel() {
           <span style="font-weight:500">${a.label || a.fanvue_display_name || '—'}</span>
         </div></td>
         <td style="color:var(--text2)">@${a.fanvue_username||'—'}</td>
-        <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+        <td>${a.is_active ? '<span class="badge badge-green">Active</span>' : a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
         <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
         <td>
-          ${a.needs_reconnect ? `<button class="btn-sm" onclick="reconnectAccount('${a.id}')">Reconnect</button>` : ''}
+          ${!a.is_active ? `<button class="btn-sm" onclick="reconnectAccount('${a.id}')">Reconnect</button>` : ''}
           <button class="btn-sm" onclick="syncAccount('${a.id}')">Sync</button>
         </td>
       </tr>`).join('');
