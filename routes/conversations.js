@@ -140,8 +140,12 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
           // Map Fanvue messages to our schema
           messages = allFanvueMessages.map(msg => {
             // Fanvue message shape:
-            // { uuid, text, sentAt, createdAt, sender: { uuid }, attachments, pricing }
+            // { uuid, text, sentAt, sender: { uuid, handle }, recipient: { uuid, handle },
+            //   hasMedia, mediaType, mediaUuids, type, pricing, purchasedAt, sentByUserId }
+            // Note: Fanvue does not return per-message read/seen status.
+            // All fetched messages are at least 'delivered'.
             const isFromFan = msg.sender?.uuid === fanvueUserUuid;
+
             return {
               id: msg.uuid,
               fanvue_message_id: msg.uuid,
@@ -153,7 +157,7 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
               ppv_price: msg.pricing?.price || null,
               ppv_unlocked: msg.pricing?.isUnlocked || false,
               sent_at: msg.sentAt || msg.createdAt,
-              platform_status: 'sent'
+              platform_status: 'delivered'
             };
           });
 
@@ -188,6 +192,22 @@ router.get('/:conversationId', authenticate, async (req, res, next) => {
             }
           }
         }
+        // Merge chatter attribution onto live-fetched outbound messages
+        if (messages.length) {
+          const outboundIds = messages.filter(m => m.direction === 'outbound').map(m => m.id);
+          if (outboundIds.length) {
+            const { data: attributed } = await supabase
+              .from('messages')
+              .select('fanvue_message_id, sent_by_user:users(id, name)')
+              .in('fanvue_message_id', outboundIds)
+              .not('sent_by_user_id', 'is', null);
+            if (attributed?.length) {
+              const attrMap = Object.fromEntries(attributed.map(a => [a.fanvue_message_id, a.sent_by_user]));
+              messages.forEach(m => { if (attrMap[m.id]) m.sent_by_user = attrMap[m.id]; });
+            }
+          }
+        }
+
       } catch (apiErr) {
         console.error('[ConvRoute] Fanvue message fetch failed:', apiErr.message);
         // Fall back to cached messages from DB

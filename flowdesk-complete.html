@@ -224,6 +224,13 @@
   .msg.outbound .msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
   .msg.inbound .msg-bubble { background: var(--bg3); color: var(--text); border-bottom-left-radius: 4px; }
   .msg-time { font-size: 10px; color: var(--text3); padding: 0 4px; }
+  .msg-meta { display: flex; align-items: center; gap: 6px; padding: 0 4px; }
+  .msg-status { font-size: 10px; color: var(--text3); transition: opacity 0.3s; }
+  .msg-status.sending { color: var(--orange); }
+  .msg-status.sent { color: var(--green); }
+  .msg-status.failed { color: var(--red); }
+  .msg-chatter { font-size: 10px; color: var(--text3); }
+  .msg-retry { font-size: 10px; color: var(--blue); cursor: pointer; text-decoration: underline; }
   .convo-input-wrap {
     padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0;
   }
@@ -781,6 +788,9 @@ let nicknameEditMode = false;
 let summaryPeriods = ['Last 24 hours', 'Last 7 days', 'Last 30 days'];
 let currentSummaryPeriod = 0;
 let activeNoteFilter = 'all';
+const msgQueue = [];
+let queueProcessing = false;
+let tempIdCounter = 0;
 
 // ─── HELPERS ─────────────────────────────────────────────
 async function api(path, opts = {}) {
@@ -1180,11 +1190,21 @@ async function openConvo(id, encodedName) {
     } else {
       box.innerHTML = msgs.map(m => {
         const out = m.direction === 'outbound';
+        const chatter = out && m.sent_by_user?.name ? `<span class="msg-chatter">${escHtml(m.sent_by_user.name)}</span>` : '';
+        const statusNote = out && m.platform_status === 'pending' ? `<span class="msg-status sending">Pending</span>` : '';
         return `<div class="msg ${out?'outbound':'inbound'}">
           <div class="msg-bubble">${escHtml(m.content || '[Media]')}</div>
-          <div class="msg-time">${shortTime(m.sent_at)}</div>
+          <div class="msg-meta">
+            ${chatter}
+            <span class="msg-time">${shortTime(m.sent_at)}</span>
+            ${statusNote}
+          </div>
         </div>`;
       }).join('');
+      // Re-append any in-flight optimistic messages for this conversation
+      msgQueue.forEach(item => {
+        if (item.convoId === id) appendOptimisticMsg(item.tempId, item.content);
+      });
       box.scrollTop = box.scrollHeight;
     }
     // Show fan detail panel with DB data first, then fetch live insights
@@ -1395,18 +1415,71 @@ function generateChatSummary() {
   resultEl.style.display = 'block';
 }
 
-async function sendMsg(convoId) {
+function sendMsg(convoId) {
   const input = document.getElementById('reply-input');
   const content = input.value.trim();
   if (!content) return;
   input.value = '';
-  try {
-    await api(`/api/conversations/${convoId}/messages`, { method: 'POST', body: { content } });
-    openConvo(convoId, encodeURIComponent(document.querySelector('.convo-fan-name')?.textContent || ''));
-    toast('Sent', 'success');
-  } catch (e) {
-    toast('Send failed: ' + e.message, 'error');
-    input.value = content;
+  const tempId = 'temp-' + tempIdCounter++;
+  appendOptimisticMsg(tempId, content);
+  msgQueue.push({ tempId, convoId, content, status: 'queued' });
+  processQueue();
+}
+
+async function processQueue() {
+  if (queueProcessing) return;
+  queueProcessing = true;
+  while (msgQueue.length > 0) {
+    const item = msgQueue.shift();
+    item.status = 'sending';
+    updateMsgStatus(item.tempId, 'sending');
+    try {
+      await api(`/api/conversations/${item.convoId}/messages`, { method: 'POST', body: { content: item.content } });
+      updateMsgStatus(item.tempId, 'sent');
+    } catch (e) {
+      updateMsgStatus(item.tempId, 'failed', item.content, item.convoId);
+    }
+  }
+  queueProcessing = false;
+}
+
+function appendOptimisticMsg(tempId, content) {
+  const box = document.getElementById('msgs-box');
+  const empty = box.querySelector('.empty');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'msg outbound';
+  div.setAttribute('data-temp-id', tempId);
+  const chatterName = currentUser?.name || '';
+  div.innerHTML = `<div class="msg-bubble">${escHtml(content)}</div>
+    <div class="msg-meta">
+      ${chatterName ? `<span class="msg-chatter">${escHtml(chatterName)}</span>` : ''}
+      <span class="msg-status sending">Sending...</span>
+    </div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function updateMsgStatus(tempId, status, content, convoId) {
+  const el = document.querySelector(`[data-temp-id="${tempId}"]`);
+  if (!el) return;
+  const statusEl = el.querySelector('.msg-status');
+  if (!statusEl) return;
+  statusEl.className = 'msg-status ' + status;
+  if (status === 'sending') {
+    statusEl.textContent = 'Sending...';
+  } else if (status === 'sent') {
+    statusEl.textContent = 'Sent';
+    setTimeout(() => { statusEl.style.opacity = '0'; }, 2000);
+  } else if (status === 'failed') {
+    statusEl.innerHTML = 'Failed · <span class="msg-retry">Retry</span>';
+    statusEl.querySelector('.msg-retry').onclick = () => {
+      statusEl.className = 'msg-status sending';
+      statusEl.textContent = 'Sending...';
+      statusEl.style.opacity = '1';
+      msgQueue.push({ tempId, convoId, content, status: 'queued' });
+      processQueue();
+    };
   }
 }
 

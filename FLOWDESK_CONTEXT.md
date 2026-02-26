@@ -182,6 +182,9 @@ All monetary values in **cents** from Fanvue — converted to **dollars** in the
 - Add pagination controls for top-spenders and earnings tables
 - Consider caching Insights API responses (rate limits)
 
+### Known Fanvue API Limitations
+- **No fan-side read receipts** — Fanvue does not expose whether a fan has read/seen a message. The `isRead` field on conversations is creator-perspective only. No `message.read` webhook exists. `platform_status` is set to `'delivered'` for all fetched messages.
+
 ---
 
 ## Maintenance Instructions
