@@ -1230,6 +1230,25 @@
   </div><!-- /main -->
 </div><!-- /app -->
 
+<!-- ── CONNECT ACCOUNT MODAL ── -->
+<div id="connect-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)hideConnectModal();">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:400px;max-width:90vw;display:flex;flex-direction:column;gap:20px;">
+    <div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">Connect Fanvue Account</div>
+      <div style="font-size:13px;color:var(--text2);">Give this account a label, then you'll be taken to Fanvue to authorize access.</div>
+    </div>
+    <div class="field">
+      <label>Account Label</label>
+      <input type="text" id="connect-label-input" placeholder="e.g. mumu, sarah, main account"
+        onkeydown="if(event.key==='Enter')confirmConnectAccount();if(event.key==='Escape')hideConnectModal();" />
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-primary" style="flex:1;padding:10px;" onclick="confirmConnectAccount()">Connect via Fanvue →</button>
+      <button class="btn-sm" style="padding:10px 16px;" onclick="hideConnectModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-wrap"></div>
 
 <script>
