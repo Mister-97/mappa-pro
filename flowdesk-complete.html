@@ -470,6 +470,47 @@
     .a-main-grid { grid-template-columns:1fr; }
     .a-bottom-pair { grid-template-columns:1fr; }
   }
+
+  /* ── OVERVIEW REDESIGN ── */
+  .ov-period-row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .ov-stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .ov-stat-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:18px 20px;
+  }
+  .ov-stat-label { font-size:11px; color:var(--text2); font-weight:500; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  .ov-stat-value { font-size:28px; font-weight:700; letter-spacing:-1px; color:var(--text); line-height:1; }
+  .ov-stat-sub { font-size:12px; color:var(--text3); margin-top:6px; }
+  .ov-main-grid { display:grid; grid-template-columns:1fr 320px; gap:12px; }
+  .ov-account-cards { display:flex; flex-direction:column; gap:10px; }
+  .ov-acct-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:16px; display:flex; align-items:center; gap:14px;
+    transition: border-color 0.15s;
+  }
+  .ov-acct-card:hover { border-color: var(--text3); }
+  .ov-acct-avatar {
+    width:44px; height:44px; border-radius:50%; flex-shrink:0;
+    background:var(--accent-dim); display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; color:var(--accent);
+    border:2px solid var(--border); overflow:hidden;
+  }
+  .ov-acct-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .ov-acct-info { flex:1; min-width:0; }
+  .ov-acct-name { font-size:14px; font-weight:600; }
+  .ov-acct-handle { font-size:12px; color:var(--text2); margin-top:2px; }
+  .ov-acct-stats { display:flex; gap:24px; margin-top:10px; }
+  .ov-acct-stat { display:flex; flex-direction:column; gap:2px; }
+  .ov-acct-stat-val { font-size:16px; font-weight:700; }
+  .ov-acct-stat-lbl { font-size:11px; color:var(--text3); }
+  .ov-acct-actions { display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink:0; }
+  .ov-bottom-row { display:flex; gap:12px; }
+  @media (max-width: 1100px) {
+    .ov-stat-row { grid-template-columns:1fr 1fr; }
+    .ov-main-grid { grid-template-columns:1fr; }
+    .ov-bottom-row { flex-direction:column; }
+    .ov-bottom-row > div:last-child { width:100%; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -548,38 +589,88 @@
 
     <!-- ── OVERVIEW ── -->
     <div class="panel active" id="panel-overview">
-      <div>
-        <div class="panel-title">Overview</div>
-        <div class="panel-subtitle" id="overview-sub">Loading your dashboard...</div>
-      </div>
-      <div class="stat-grid" id="stat-grid">
-        <div class="stat-card"><div class="stat-label">Total Earnings (30d)</div><div class="stat-value" id="stat-earn">—</div></div>
-        <div class="stat-card"><div class="stat-label">Subscribers</div><div class="stat-value" id="stat-subs">—</div></div>
-        <div class="stat-card"><div class="stat-label">New Today</div><div class="stat-value" id="stat-new">—</div></div>
-        <div class="stat-card"><div class="stat-label">Active Accounts</div><div class="stat-value" id="stat-accts">—</div></div>
-        <div class="stat-card"><div class="stat-label">Team Members</div><div class="stat-value" id="stat-team">—</div></div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Connected Accounts</div>
-          <button class="btn-sm primary" onclick="showPanel('accounts')">Manage</button>
+      <!-- Header row -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div class="panel-title" id="overview-greeting">Overview</div>
+          <div class="panel-subtitle" id="overview-sub">Loading your dashboard...</div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Account</th><th>Status</th><th>Last Synced</th></tr></thead>
-            <tbody id="accts-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-          </table>
+        <div class="ov-period-row" id="ov-period-row">
+          <div class="a-period-pill active" onclick="setOvPeriod('today')" id="ovp-today">Today</div>
+          <div class="a-period-pill" onclick="setOvPeriod('yesterday')" id="ovp-yesterday">Yesterday</div>
+          <div class="a-period-pill" onclick="setOvPeriod('7d')" id="ovp-7d">7d</div>
+          <div class="a-period-pill" onclick="setOvPeriod('14d')" id="ovp-14d">14d</div>
+          <div class="a-period-pill" onclick="setOvPeriod('30d')" id="ovp-30d">30d</div>
+          <div class="a-period-pill" onclick="setOvPeriod('month')" id="ovp-month">This month</div>
+          <div class="a-period-pill" onclick="setOvPeriod('year')" id="ovp-year">This year</div>
+          <div class="a-period-pill" onclick="setOvPeriod('all')" id="ovp-all">All time</div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Team</div>
+
+      <!-- KPI stat cards -->
+      <div class="ov-stat-row">
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">Total Revenue</div>
+          <div class="ov-stat-value" id="ov-earn">—</div>
+          <div class="ov-stat-sub" id="ov-earn-sub">Last 30 days</div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
-            <tbody id="team-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-          </table>
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">Subscribers</div>
+          <div class="ov-stat-value" id="ov-subs">—</div>
+          <div class="ov-stat-sub">Active now</div>
+        </div>
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">New Subscribers</div>
+          <div class="ov-stat-value" id="ov-new-subs">—</div>
+          <div class="ov-stat-sub" id="ov-new-sub-label">Last 30 days</div>
+        </div>
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">Active Accounts</div>
+          <div class="ov-stat-value" id="ov-accts">—</div>
+          <div class="ov-stat-sub" id="ov-team-sub">— team members</div>
+        </div>
+      </div>
+
+      <!-- Account cards + Top Spenders -->
+      <div class="ov-main-grid">
+        <div class="ov-account-cards" id="ov-account-cards">
+          <div class="loading">Loading accounts...</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Top Spenders</div>
+            <select id="ov-spenders-acct" onchange="loadOvTopSpenders()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;cursor:pointer;outline:none;max-width:120px;"></select>
+          </div>
+          <div id="ov-top-spenders"><div class="loading">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions + Quick Links -->
+      <div class="ov-bottom-row">
+        <div class="card" style="flex:1;min-width:0;">
+          <div class="card-header">
+            <div class="card-title">Recent Transactions</div>
+            <select id="ov-tx-acct" onchange="loadOvTransactions()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;cursor:pointer;outline:none;max-width:120px;"></select>
+          </div>
+          <div id="ov-recent-tx" style="padding:0 16px;"><div class="loading">Loading...</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;width:260px;flex-shrink:0;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Quick Actions</div></div>
+            <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+              <button class="btn-sm" style="width:100%;text-align:left;padding:10px 12px;font-size:13px;" onclick="showPanel('inbox')">💬 Open Inbox</button>
+              <button class="btn-sm" style="width:100%;text-align:left;padding:10px 12px;font-size:13px;" onclick="showPanel('analytics')">📈 View Analytics</button>
+              <button class="btn-sm" style="width:100%;text-align:left;padding:10px 12px;font-size:13px;" onclick="showPanel('fans')">👥 Browse Fans</button>
+              <button class="btn-sm" style="width:100%;text-align:left;padding:10px 12px;font-size:13px;" onclick="showPanel('accounts')">🔗 Manage Accounts</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Team</div>
+              <button class="btn-sm" onclick="showPanel('team')">Manage</button>
+            </div>
+            <div id="ov-team"><div class="loading">Loading...</div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1101,59 +1192,197 @@ function showPanel(name) {
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────
+let ovPeriod = 'today';
+const ovPeriodLabels = { today:'Today', yesterday:'Yesterday', '7d':'Last 7 days', '14d':'Last 14 days', '30d':'Last 30 days', month:'This month', year:'This year', all:'All time' };
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+function setOvPeriod(p) {
+  ovPeriod = p;
+  document.querySelectorAll('#ov-period-row .a-period-pill').forEach(el => el.classList.remove('active'));
+  const pill = document.getElementById('ovp-' + p);
+  if (pill) pill.classList.add('active');
+  loadOverviewAnalytics();
+}
+
 async function loadDashboard() {
   try {
     const d = await api('/api/dashboard');
     document.getElementById('org-name').textContent = d.org?.name || 'Your Agency';
-    document.getElementById('overview-sub').textContent = `Welcome back, ${currentUser.name}`;
-    document.getElementById('stat-earn').textContent = fmt(d.totals?.totalEarnings);
-    document.getElementById('stat-subs').textContent = fmtNum(d.totals?.totalSubscribers);
-    document.getElementById('stat-new').textContent = fmtNum(d.totals?.newSubscribersToday);
-    document.getElementById('stat-accts').textContent = d.accounts?.active ?? '—';
-    document.getElementById('stat-team').textContent = d.team?.total ?? '—';
+    const firstName = (currentUser.name || '').split(' ')[0] || 'there';
+    document.getElementById('overview-greeting').textContent = `Good ${getGreeting()}, ${firstName} 👋`;
+    document.getElementById('overview-sub').textContent = d.org?.name || 'Your agency dashboard';
+    document.getElementById('ov-accts').textContent = d.accounts?.active ?? '—';
+    document.getElementById('ov-team-sub').textContent = `${d.team?.total ?? 0} team member${d.team?.total === 1 ? '' : 's'}`;
 
     accounts = d.accounts?.all || [];
     populateAcctSelects();
 
-    // Accounts table
-    const tbody = document.getElementById('accts-table');
-    if (!accounts.length) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty">No accounts connected yet</td></tr>';
-    } else {
-      tbody.innerHTML = accounts.map(a => `
-        <tr>
-          <td><div style="display:flex;align-items:center;gap:8px;">
-            ${a.avatar_url ? `<img src="${a.avatar_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;">${(a.label||'?')[0]}</div>`}
-            <div><div style="font-weight:500;">${a.label || a.fanvue_display_name || a.fanvue_username}</div>
-            <div style="font-size:11px;color:var(--text3);">@${a.fanvue_username||''}</div></div>
-          </div></td>
-          <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
-          <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
-        </tr>`).join('');
-    }
+    // Populate per-overview widget account selectors
+    const activeAccounts = accounts.filter(a => a.is_active);
+    ['ov-spenders-acct', 'ov-tx-acct'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      if (!sel) return;
+      sel.innerHTML = activeAccounts.map(a => `<option value="${a.id}">${a.label || a.fanvue_username}</option>`).join('');
+    });
 
-    // Team table
-    const ttbody = document.getElementById('team-table');
+    // Team widget
     const team = d.team?.members || [];
-    if (!team.length) {
-      ttbody.innerHTML = '<tr><td colspan="3" class="empty">No team members</td></tr>';
-    } else {
-      ttbody.innerHTML = team.map(u => `
-        <tr>
-          <td style="font-weight:500">${u.name}</td>
-          <td style="color:var(--text2)">${u.email}</td>
-          <td>${roleBadge(u.role)}</td>
-        </tr>`).join('');
-    }
+    document.getElementById('ov-team').innerHTML = team.length
+      ? team.map(u => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);">
+          <div class="user-avatar" style="flex-shrink:0;width:30px;height:30px;font-size:11px;">${(u.name||'?')[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name}</div>
+            <div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.email}</div>
+          </div>
+          ${roleBadge(u.role)}
+        </div>`).join('')
+      : '<div class="empty">No team members</div>';
 
-    // Inbox badge
-    const unreadCount = d.accounts?.all?.reduce((a,b) => a + (b.unread_count || 0), 0) || 0;
+    // Inbox unread badge
+    const unreadCount = accounts.reduce((a, b) => a + (b.unread_count || 0), 0);
     const badge = document.getElementById('inbox-badge');
     badge.style.display = unreadCount ? 'inline' : 'none';
     badge.textContent = unreadCount;
 
+    // Load analytics (earnings, subs, per-account cards)
+    await loadOverviewAnalytics();
+
   } catch (e) {
     toast(e.message, 'error');
+  }
+}
+
+async function loadOverviewAnalytics() {
+  const label = ovPeriodLabels[ovPeriod] || ovPeriod;
+  ['ov-earn', 'ov-subs', 'ov-new-subs'].forEach(id => { document.getElementById(id).textContent = '—'; });
+  document.getElementById('ov-earn-sub').textContent = label;
+  document.getElementById('ov-new-sub-label').textContent = label;
+  document.getElementById('ov-account-cards').innerHTML = '<div class="loading">Loading...</div>';
+
+  try {
+    const d = await api(`/api/analytics/overview?period=${ovPeriod}`);
+    document.getElementById('ov-earn').textContent = fmt(d.totals?.earnings);
+    document.getElementById('ov-subs').textContent = fmtNum(d.totals?.subscribers);
+    document.getElementById('ov-new-subs').textContent = fmtNum(d.totals?.newSubscribers);
+
+    const acctCards = document.getElementById('ov-account-cards');
+    if (!d.accounts?.length) {
+      acctCards.innerHTML = '<div class="empty">No active accounts connected</div>';
+    } else {
+      acctCards.innerHTML = d.accounts.map(a => {
+        const initials = (a.label || a.fanvue_username || '?')[0].toUpperCase();
+        const avatarInner = a.avatar_url
+          ? `<img src="${a.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';">`
+          : initials;
+        return `
+        <div class="ov-acct-card">
+          <div class="ov-acct-avatar">${avatarInner}</div>
+          <div class="ov-acct-info">
+            <div class="ov-acct-name">${a.label || a.fanvue_username}</div>
+            <div class="ov-acct-handle">@${a.fanvue_username || ''}</div>
+            <div class="ov-acct-stats">
+              <div class="ov-acct-stat">
+                <div class="ov-acct-stat-val" style="color:var(--green);">${fmt(a.earnings)}</div>
+                <div class="ov-acct-stat-lbl">${label}</div>
+              </div>
+              <div class="ov-acct-stat">
+                <div class="ov-acct-stat-val">${fmtNum(a.subscriberCount)}</div>
+                <div class="ov-acct-stat-lbl">Subscribers</div>
+              </div>
+              <div class="ov-acct-stat">
+                <div class="ov-acct-stat-val">${fmtNum(a.newSubscribers)}</div>
+                <div class="ov-acct-stat-lbl">New ${label}</div>
+              </div>
+            </div>
+          </div>
+          <div class="ov-acct-actions">
+            <button class="btn-sm primary" onclick="showPanel('analytics')">Analytics →</button>
+            <button class="btn-sm" onclick="showPanel('inbox')">Inbox</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  } catch (e) {
+    document.getElementById('ov-account-cards').innerHTML = '<div class="empty">Failed to load data</div>';
+    console.error('[Overview] analytics error:', e.message);
+  }
+
+  loadOvTopSpenders();
+  loadOvTransactions();
+}
+
+async function loadOvTopSpenders() {
+  const sel = document.getElementById('ov-spenders-acct');
+  const acctId = sel?.value;
+  if (!acctId) return;
+  const el = document.getElementById('ov-top-spenders');
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api(`/api/analytics/${acctId}/top-spenders?size=8`);
+    if (!d.data?.length) { el.innerHTML = '<div class="empty">No spenders yet</div>'; return; }
+    el.innerHTML = d.data.slice(0, 8).map((f, i) => {
+      const initials = (f.display_name || f.username || '?')[0]?.toUpperCase() || '?';
+      const avatarEl = f.avatar_url
+        ? `<img src="${f.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0;" onerror="this.style.display='none';">`
+        : `<div class="a-avatar sm" style="flex-shrink:0;">${initials}</div>`;
+      return `
+      <div class="a-spender-row" style="padding:9px 14px;">
+        <div style="font-size:12px;color:var(--text3);width:18px;text-align:right;flex-shrink:0;">${i + 1}</div>
+        ${avatarEl}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.display_name || f.username || 'Fan'}</div>
+          ${f.username ? `<div style="font-size:11px;color:var(--text3);">@${f.username}</div>` : ''}
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--green);flex-shrink:0;">${fmt(f.gross || f.net || 0)}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load</div>';
+  }
+}
+
+async function loadOvTransactions() {
+  const sel = document.getElementById('ov-tx-acct');
+  const acctId = sel?.value;
+  if (!acctId) return;
+  const el = document.getElementById('ov-recent-tx');
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  const sourceColors = { subscription: 'var(--accent)', tip: 'var(--green)', ppv: 'var(--orange)', message: 'var(--blue)' };
+  const sourceLabels = { subscription: 'Sub', tip: 'Tip', ppv: 'PPV', message: 'Msg' };
+  try {
+    const d = await api(`/api/analytics/${acctId}/earnings?period=30d`);
+    const txs = (d.data || [])
+      .sort((a, b) => new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0))
+      .slice(0, 12);
+    if (!txs.length) { el.innerHTML = '<div class="empty">No transactions</div>'; return; }
+    el.innerHTML = txs.map(tx => {
+      const src = tx.source || 'other';
+      const color = sourceColors[src] || 'var(--text2)';
+      const srcLabel = sourceLabels[src] || src;
+      const ts = tx.createdAt || tx.created_at;
+      const fanName = tx.user?.displayName || tx.user?.handle || tx.fan_display_name || tx.fan_username || '';
+      return `
+      <div class="a-tx-row">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${color};flex-shrink:0;">${srcLabel[0]}</div>
+        <div class="a-tx-info" style="flex:1;">
+          <div style="font-size:13px;color:var(--text);font-weight:500;">${srcLabel}</div>
+          ${fanName ? `<div style="font-size:11px;color:var(--text3);">from ${fanName}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:13px;font-weight:700;color:${color};">+${fmt(tx.gross || 0)}</div>
+          <div style="font-size:11px;color:var(--text3);">${timeAgo(ts)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load</div>';
   }
 }
 
