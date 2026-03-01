@@ -15,94 +15,82 @@ router.use((req, res, next) => {
 
 const toDollars = (cents) => (cents || 0) / 100;
 
-/** Format a Date as YYYY-MM-DD (date-only, avoids time-boundary exclusions) */
-function toDateStr(d) {
-  return d.toISOString().split('T')[0];
-}
-
 /**
- * Parse period → { startDate, endDate } as YYYY-MM-DD strings.
- * Date-only format ensures Fanvue includes the full start/end day
- * regardless of the exact time the request is made.
- *
- * Supported periods: today, yesterday, 7d, 14d, 30d, month, year, all
+ * Parse period → { startDate, endDate } as ISO timestamp strings.
+ * Fanvue API requires full ISO-8601 timestamps (date-only strings return 400).
+ * Supported: today, yesterday, 7d, 14d, 30d, month, year, all
  */
 function parsePeriod(period = '30d') {
   const now = new Date();
-  const today = toDateStr(now);
-  const daysAgo = (n) => toDateStr(new Date(Date.now() - n * 86400000));
+  const endDate = now.toISOString();
 
   switch (period) {
-    case 'today':
-      return { startDate: today, endDate: today };
-
-    case 'yesterday': {
-      const y = daysAgo(1);
-      return { startDate: y, endDate: today };
+    case 'today': {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      return { startDate: start.toISOString(), endDate };
     }
-
+    case 'yesterday': {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(0, 0, 0, 0);
+      return { startDate: start.toISOString(), endDate: end.toISOString() };
+    }
     case '7d':
-      return { startDate: daysAgo(7), endDate: today };
-
+      return { startDate: new Date(Date.now() - 7 * 86400000).toISOString(), endDate };
     case '14d':
-      return { startDate: daysAgo(14), endDate: today };
-
+      return { startDate: new Date(Date.now() - 14 * 86400000).toISOString(), endDate };
     case '30d':
-      return { startDate: daysAgo(30), endDate: today };
-
+      return { startDate: new Date(Date.now() - 30 * 86400000).toISOString(), endDate };
     case 'month': {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { startDate: toDateStr(start), endDate: today };
+      return { startDate: start.toISOString(), endDate };
     }
-
     case 'year': {
       const start = new Date(now.getFullYear(), 0, 1);
-      return { startDate: toDateStr(start), endDate: today };
+      return { startDate: start.toISOString(), endDate };
     }
-
     case 'all':
-      // 2-year lookback — covers any Fanvue account history
-      return { startDate: daysAgo(730), endDate: today };
-
+      // 2-year lookback covers any Fanvue account history
+      return { startDate: new Date(Date.now() - 730 * 86400000).toISOString(), endDate };
     default: {
       const days = parseInt(period) || 30;
-      return { startDate: daysAgo(days), endDate: today };
+      return { startDate: new Date(Date.now() - days * 86400000).toISOString(), endDate };
     }
   }
 }
 
 /**
- * Split [startDate, endDate] (YYYY-MM-DD) into ≤chunkDays windows.
+ * Split [startDate, endDate] into ≤chunkDays windows.
  * Fanvue Insights API rejects date ranges longer than ~30 days.
- * Handles same-day ranges by returning a single chunk.
  */
 function buildChunks(startDate, endDate, chunkDays = 28) {
   const chunks = [];
   let cur = new Date(startDate).getTime();
   const end = new Date(endDate).getTime();
+  const step = chunkDays * 86400000;
 
-  // Same day or reversed — return single chunk
   if (cur >= end) {
     chunks.push({ startDate, endDate });
     return chunks;
   }
 
-  const step = chunkDays * 86400000;
   while (cur < end) {
     const next = Math.min(cur + step, end);
-    chunks.push({ startDate: toDateStr(new Date(cur)), endDate: toDateStr(new Date(next)) });
+    chunks.push({ startDate: new Date(cur).toISOString(), endDate: new Date(next).toISOString() });
     cur = next;
   }
   return chunks;
 }
 
-// Max chunks processed in parallel per fetch call.
-// 3 concurrent keeps us well under Fanvue's rate limit while ~3× faster than sequential.
+// Process up to 3 chunks in parallel — ~3× faster than sequential, safe for rate limits
 const CHUNK_CONCURRENCY = 3;
 
 /**
- * Fetch all earnings pages for a single chunk (follows nextCursor).
- * Returns raw Fanvue data array (values still in cents).
+ * Fetch all pages for one earnings chunk, following nextCursor until exhausted.
+ * Returns raw Fanvue data array (values in cents).
  */
 async function fetchEarningsChunk(account, chunk) {
   const data = [];
@@ -127,10 +115,9 @@ async function fetchEarningsChunk(account, chunk) {
 }
 
 /**
- * Fetch earnings for a date range.
- * Splits into 28-day chunks (Fanvue API limit), processes CHUNK_CONCURRENCY
- * chunks in parallel, and follows cursor pagination within each chunk.
- * Returns raw Fanvue data array (values still in cents).
+ * Fetch all earnings for a date range.
+ * Always uses chunked + cursor-paginated path for all periods, including short ones.
+ * Runs CHUNK_CONCURRENCY chunks in parallel for speed.
  */
 async function fetchEarnings(account, startDate, endDate) {
   const chunks = buildChunks(startDate, endDate);
