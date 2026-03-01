@@ -1378,7 +1378,7 @@ function renderTopSpenders(data) {
   el.innerHTML = visible.map(f => {
     const name = f.display_name || f.username || f.fan_username || f.fan?.display_name || 'Unknown';
     const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    const amount = fmt(f.net || f.gross || 0);
+    const amount = fmt(f.gross || f.net || 0);
     return `<div class="a-spender-row">
       <div class="a-avatar">${initials}</div>
       <div style="flex:1;font-size:13px;font-weight:500;">${name}</div>
