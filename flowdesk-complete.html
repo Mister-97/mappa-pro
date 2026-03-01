@@ -733,10 +733,14 @@
 
       <!-- Period pills -->
       <div class="a-period-row">
-        <div class="a-period-pill active" onclick="setAnalyticsPeriod('all')" id="aperiod-all">All time</div>
-        <div class="a-period-pill" onclick="setAnalyticsPeriod('90d')" id="aperiod-90d">Last 90d</div>
-        <div class="a-period-pill" onclick="setAnalyticsPeriod('30d')" id="aperiod-30d">Last 30d</div>
-        <div class="a-period-pill" onclick="setAnalyticsPeriod('7d')" id="aperiod-7d">Last 7d</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('today')" id="aperiod-today">Today</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('yesterday')" id="aperiod-yesterday">Yesterday</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('7d')" id="aperiod-7d">Last 7 days</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('14d')" id="aperiod-14d">Last 14 days</div>
+        <div class="a-period-pill active" onclick="setAnalyticsPeriod('30d')" id="aperiod-30d">Last 30 days</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('month')" id="aperiod-month">This month</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('year')" id="aperiod-year">This year</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('all')" id="aperiod-all">All time</div>
       </div>
 
       <!-- Stat cards row -->
@@ -1225,7 +1229,7 @@ let analyticsView = 'net';
 let analyticsCharts = {};
 let analyticsAllSpenders = [];
 let analyticsShowAll = false;
-let analyticsPeriod = 'all';
+let analyticsPeriod = '30d';
 let analyticsEarningsData = null;
 
 function setAnalyticsPeriod(period) {
@@ -1282,7 +1286,8 @@ async function loadAnalytics() {
     const totals = overview.totals;
 
     document.getElementById('a-earnings-total').textContent = fmt(totals.earnings);
-    document.getElementById('a-earnings-sub').textContent = period === 'all' ? 'All time' : 'Last ' + period;
+    const periodLabels = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 days', '14d': 'Last 14 days', '30d': 'Last 30 days', month: 'This month', year: 'This year', all: 'All time' };
+    document.getElementById('a-earnings-sub').textContent = periodLabels[period] || ('Last ' + period);
 
     const now = new Date();
     document.getElementById('a-earnings-month-name').textContent =

@@ -15,107 +15,156 @@ router.use((req, res, next) => {
 
 const toDollars = (cents) => (cents || 0) / 100;
 
-/**
- * Parse period → { startDate, endDate } as ISO strings.
- * 'all' = last 12 months (covers full mumu account history).
- */
-function parsePeriod(period = '30d') {
-  const endDate = new Date().toISOString();
-  if (period === 'all') {
-    return { startDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(), endDate };
-  }
-  const days = parseInt(period) || 30;
-  return { startDate: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(), endDate };
+/** Format a Date as YYYY-MM-DD (date-only, avoids time-boundary exclusions) */
+function toDateStr(d) {
+  return d.toISOString().split('T')[0];
 }
 
 /**
- * Split [start, end] into chunks of at most chunkDays days.
+ * Parse period → { startDate, endDate } as YYYY-MM-DD strings.
+ * Date-only format ensures Fanvue includes the full start/end day
+ * regardless of the exact time the request is made.
+ *
+ * Supported periods: today, yesterday, 7d, 14d, 30d, month, year, all
+ */
+function parsePeriod(period = '30d') {
+  const now = new Date();
+  const today = toDateStr(now);
+  const daysAgo = (n) => toDateStr(new Date(Date.now() - n * 86400000));
+
+  switch (period) {
+    case 'today':
+      return { startDate: today, endDate: today };
+
+    case 'yesterday': {
+      const y = daysAgo(1);
+      return { startDate: y, endDate: today };
+    }
+
+    case '7d':
+      return { startDate: daysAgo(7), endDate: today };
+
+    case '14d':
+      return { startDate: daysAgo(14), endDate: today };
+
+    case '30d':
+      return { startDate: daysAgo(30), endDate: today };
+
+    case 'month': {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { startDate: toDateStr(start), endDate: today };
+    }
+
+    case 'year': {
+      const start = new Date(now.getFullYear(), 0, 1);
+      return { startDate: toDateStr(start), endDate: today };
+    }
+
+    case 'all':
+      // 2-year lookback — covers any Fanvue account history
+      return { startDate: daysAgo(730), endDate: today };
+
+    default: {
+      const days = parseInt(period) || 30;
+      return { startDate: daysAgo(days), endDate: today };
+    }
+  }
+}
+
+/**
+ * Split [startDate, endDate] (YYYY-MM-DD) into ≤chunkDays windows.
  * Fanvue Insights API rejects date ranges longer than ~30 days.
+ * Handles same-day ranges by returning a single chunk.
  */
 function buildChunks(startDate, endDate, chunkDays = 28) {
   const chunks = [];
   let cur = new Date(startDate).getTime();
   const end = new Date(endDate).getTime();
-  const step = chunkDays * 24 * 60 * 60 * 1000;
+
+  // Same day or reversed — return single chunk
+  if (cur >= end) {
+    chunks.push({ startDate, endDate });
+    return chunks;
+  }
+
+  const step = chunkDays * 86400000;
   while (cur < end) {
     const next = Math.min(cur + step, end);
-    chunks.push({ startDate: new Date(cur).toISOString(), endDate: new Date(next).toISOString() });
+    chunks.push({ startDate: toDateStr(new Date(cur)), endDate: toDateStr(new Date(next)) });
     cur = next;
   }
   return chunks;
 }
 
+// Max chunks processed in parallel per fetch call.
+// 3 concurrent keeps us well under Fanvue's rate limit while ~3× faster than sequential.
+const CHUNK_CONCURRENCY = 3;
+
 /**
- * Fetch earnings transactions for a date range.
- * - ≤31 days  → single direct call (original behaviour, known-good for 7d/30d)
- * - >31 days  → sequential 28-day chunks to stay under Fanvue's range limit
- *               without hammering their rate limit with parallel requests.
+ * Fetch all earnings pages for a single chunk (follows nextCursor).
+ * Returns raw Fanvue data array (values still in cents).
+ */
+async function fetchEarningsChunk(account, chunk) {
+  const data = [];
+  let cursor = null;
+  let pages = 0;
+  do {
+    try {
+      const r = await withRetry(() => fanvueApi.getInsightsEarnings(account, {
+        startDate: chunk.startDate,
+        endDate: chunk.endDate,
+        cursor: cursor || undefined,
+        limit: 100
+      }));
+      data.push(...(r?.data || []));
+      cursor = r?.nextCursor || null;
+    } catch (e) {
+      console.error(`[Analytics] earnings chunk ${chunk.startDate} error:`, e.message);
+      break;
+    }
+  } while (cursor && ++pages < 20);
+  return data;
+}
+
+/**
+ * Fetch earnings for a date range.
+ * Splits into 28-day chunks (Fanvue API limit), processes CHUNK_CONCURRENCY
+ * chunks in parallel, and follows cursor pagination within each chunk.
  * Returns raw Fanvue data array (values still in cents).
  */
 async function fetchEarnings(account, startDate, endDate) {
-  const totalDays = (new Date(endDate) - new Date(startDate)) / 86400000;
-
-  if (totalDays <= 31) {
-    try {
-      const r = await withRetry(() => fanvueApi.getInsightsEarnings(account, { startDate, endDate, limit: 100 }));
-      return r?.data || [];
-    } catch (e) {
-      console.error('[Analytics] fetchEarnings error:', e.message);
-      return [];
-    }
-  }
-
-  // Sequential chunks — avoids Fanvue rate-limit issues from parallel bursts
+  const chunks = buildChunks(startDate, endDate);
   const allData = [];
-  for (const chunk of buildChunks(startDate, endDate)) {
-    let cursor = null;
-    let pages = 0;
-    do {
-      try {
-        const r = await withRetry(() => fanvueApi.getInsightsEarnings(account, {
-          startDate: chunk.startDate,
-          endDate: chunk.endDate,
-          cursor: cursor || undefined,
-          limit: 100
-        }));
-        allData.push(...(r?.data || []));
-        cursor = r?.nextCursor || null;
-      } catch (e) {
-        console.error(`[Analytics] chunk ${chunk.startDate} error:`, e.message);
-        break;
-      }
-    } while (cursor && ++pages < 10);
+  for (let i = 0; i < chunks.length; i += CHUNK_CONCURRENCY) {
+    const batch = chunks.slice(i, i + CHUNK_CONCURRENCY);
+    const results = await Promise.all(batch.map(c => fetchEarningsChunk(account, c)));
+    results.forEach(d => allData.push(...d));
   }
   return allData;
 }
 
 /**
- * Fetch subscriber daily history for a date range (same single/chunked logic).
+ * Fetch subscriber daily history for a date range.
+ * Same chunked + parallel approach as fetchEarnings.
  */
 async function fetchSubscribers(account, startDate, endDate) {
-  const totalDays = (new Date(endDate) - new Date(startDate)) / 86400000;
-
-  if (totalDays <= 31) {
-    try {
-      const r = await withRetry(() => fanvueApi.getInsightsSubscribers(account, { startDate, endDate }));
-      return r?.data || [];
-    } catch (e) {
-      console.error('[Analytics] fetchSubscribers error:', e.message);
-      return [];
-    }
-  }
-
+  const chunks = buildChunks(startDate, endDate);
   const allData = [];
-  for (const chunk of buildChunks(startDate, endDate)) {
-    try {
-      const r = await withRetry(() => fanvueApi.getInsightsSubscribers(account, {
-        startDate: chunk.startDate,
-        endDate: chunk.endDate
-      }));
-      allData.push(...(r?.data || []));
-    } catch (e) {
-      console.error(`[Analytics] sub chunk ${chunk.startDate} error:`, e.message);
-    }
+  for (let i = 0; i < chunks.length; i += CHUNK_CONCURRENCY) {
+    const batch = chunks.slice(i, i + CHUNK_CONCURRENCY);
+    const results = await Promise.all(batch.map(async (chunk) => {
+      try {
+        const r = await withRetry(() => fanvueApi.getInsightsSubscribers(account, {
+          startDate: chunk.startDate,
+          endDate: chunk.endDate
+        }));
+        return r?.data || [];
+      } catch (e) {
+        console.error(`[Analytics] subscribers chunk ${chunk.startDate} error:`, e.message);
+        return [];
+      }
+    }));
+    results.forEach(d => allData.push(...d));
   }
   return allData;
 }
@@ -150,7 +199,8 @@ router.get('/overview', authenticate, async (req, res, next) => {
       const earningsRaw = await fetchEarnings(account, startDate, endDate);
       const subData = await fetchSubscribers(account, startDate, endDate);
 
-      const earningsTotal = earningsRaw.reduce((s, tx) => s + toDollars(tx.net || tx.gross || 0), 0);
+      // Use gross to match Fanvue's dashboard display
+      const earningsTotal = earningsRaw.reduce((s, tx) => s + toDollars(tx.gross || 0), 0);
       const newSubscribers = subData.reduce((s, d) => s + (d.newSubscribersCount || 0), 0);
 
       return {
@@ -200,10 +250,11 @@ router.get('/:accountId/earnings', authenticate, async (req, res, next) => {
       .filter(tx => !source || source === 'all' || tx.source === source)
       .map(tx => ({ ...tx, gross: toDollars(tx.gross), net: toDollars(tx.net), fee: toDollars(tx.fee) }));
 
-    const total = data.reduce((s, tx) => s + (tx.net || 0), 0);
+    // Use gross to match Fanvue's display
+    const total = data.reduce((s, tx) => s + (tx.gross || 0), 0);
     const breakdown = data.reduce((acc, tx) => {
       const src = tx.source || 'other';
-      acc[src] = (acc[src] || 0) + (tx.net || 0);
+      acc[src] = (acc[src] || 0) + (tx.gross || 0);
       return acc;
     }, {});
 
