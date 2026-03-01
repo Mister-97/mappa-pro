@@ -421,7 +421,130 @@
   }
   /* insights loading shimmer */
   .fdp-loading-text { color: var(--text3); font-size: 12px; font-style: italic; }
+  /* ── ANALYTICS REDESIGN ── */
+  .a-tabs { display:flex; gap:4px; background:var(--bg3); border-radius:8px; padding:4px; width:fit-content; margin-bottom:16px; }
+  .a-tab { padding:6px 16px; border-radius:6px; border:none; background:transparent; color:var(--text2); font-size:13px; cursor:pointer; transition:all 0.15s; }
+  .a-tab.active { background:var(--bg2); color:var(--text); font-weight:500; }
+  .a-tab:hover:not(.active) { color:var(--text); }
+  .a-period-row { display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap; }
+  .a-period-pill { padding:5px 14px; border-radius:20px; border:1px solid var(--border); font-size:12px; color:var(--text2); cursor:pointer; background:transparent; transition:all 0.15s; }
+  .a-period-pill.active { background:var(--bg3); color:var(--text); border-color:var(--text3); }
+  .a-period-pill:hover:not(.active) { color:var(--text); }
+  .a-stat-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }
+  .a-stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:18px; overflow:hidden; min-width:0; }
+  .a-stat-card-label { font-size:12px; color:var(--text2); font-weight:500; margin-bottom:8px; }
+  .a-stat-card-value { font-size:30px; font-weight:700; letter-spacing:-1px; line-height:1; }
+  .a-stat-card-sub { font-size:12px; color:var(--text2); margin-top:4px; }
+  .a-sparkline { display:block; margin-top:16px; height:50px !important; }
+  .a-vs-badge { display:inline-flex; align-items:center; gap:4px; background:rgba(34,197,94,0.15); color:#22c55e; font-size:12px; padding:3px 10px; border-radius:20px; margin-top:6px; font-weight:500; }
+  .a-stat-promo { background:linear-gradient(135deg, rgba(168,85,247,0.12), rgba(124,58,237,0.08)); }
+  .a-promo-btn { margin-top:12px; padding:6px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+  .a-promo-btn:hover { background:var(--bg3); }
+  .a-main-grid { display:grid; grid-template-columns:2fr 1fr; gap:12px; }
+  .a-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px; min-width:0; }
+  .a-toggle { display:flex; background:var(--bg3); border-radius:6px; padding:3px; }
+  .a-toggle-btn { padding:4px 14px; border-radius:4px; border:none; background:transparent; color:var(--text2); font-size:12px; cursor:pointer; }
+  .a-toggle-btn.active { background:var(--bg); color:var(--text); }
+  .a-spender-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .a-spender-row:last-child { border-bottom:none; }
+  .a-avatar { width:36px; height:36px; border-radius:50%; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--text); flex-shrink:0; }
+  .a-avatar.sm { width:30px; height:30px; font-size:11px; }
+  .a-see-more { width:100%; padding:8px; background:none; border:none; color:var(--text2); font-size:12px; cursor:pointer; margin-top:4px; }
+  .a-see-more:hover { color:var(--text); }
+  .a-live-badge { font-size:11px; color:#22c55e; display:inline-flex; align-items:center; gap:3px; }
+  .a-tx-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .a-tx-row:last-child { border-bottom:none; }
+  .a-tx-info { flex:1; font-size:12px; line-height:1.4; }
+  .a-tx-amount { font-size:13px; font-weight:700; margin-top:2px; }
+  .a-tx-time { font-size:11px; color:var(--text2); text-align:right; white-space:nowrap; }
+  .a-brow { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
+  .a-brow:last-child { border-bottom:none; }
+  .a-brow-dot { width:8px; height:8px; border-radius:50%; margin-right:10px; flex-shrink:0; }
+  .a-brow-label { flex:1; font-size:13px; color:var(--text2); }
+  .a-brow-amount { font-size:13px; font-weight:600; padding-right:12px; }
+  .a-brow-badge { font-size:11px; padding:2px 8px; border-radius:20px; background:rgba(34,197,94,0.15); color:#22c55e; font-weight:500; }
+  .a-donut-legend-row { display:flex; align-items:center; gap:8px; padding:5px 0; }
+  .a-donut-legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .a-donut-legend-bar { flex:1; height:3px; border-radius:2px; background:var(--bg3); overflow:hidden; }
+  .a-donut-legend-bar-fill { height:100%; border-radius:2px; }
+  .a-donut-legend-label { font-size:12px; color:var(--text2); width:72px; }
+  .a-donut-legend-amount { font-size:13px; font-weight:700; color:var(--text); }
+  .a-col-left { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  .a-col-right { display:flex; flex-direction:column; gap:12px; }
+  .a-bottom-pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width: 900px) {
+    .a-stat-row { grid-template-columns:1fr 1fr; }
+    .a-main-grid { grid-template-columns:1fr; }
+    .a-bottom-pair { grid-template-columns:1fr; }
+  }
+
+  /* ── OVERVIEW REDESIGN ── */
+  .ov-period-row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .ov-stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .ov-stat-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:18px 20px;
+  }
+  .ov-stat-label { font-size:11px; color:var(--text2); font-weight:500; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  .ov-stat-value { font-size:28px; font-weight:700; letter-spacing:-1px; color:var(--text); line-height:1; }
+  .ov-stat-sub { font-size:12px; color:var(--text3); margin-top:6px; }
+  .ov-main-grid { display:grid; grid-template-columns:1fr 320px; gap:12px; }
+  .ov-account-cards { display:flex; flex-direction:column; gap:10px; }
+  .ov-acct-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:16px; display:flex; align-items:center; gap:14px;
+    transition: border-color 0.15s;
+  }
+  .ov-acct-card:hover { border-color: var(--text3); }
+  .ov-acct-avatar {
+    width:44px; height:44px; border-radius:50%; flex-shrink:0;
+    background:var(--accent-dim); display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; color:var(--accent);
+    border:2px solid var(--border); overflow:hidden;
+  }
+  .ov-acct-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .ov-acct-info { flex:1; min-width:0; }
+  .ov-acct-name { font-size:14px; font-weight:600; }
+  .ov-acct-handle { font-size:12px; color:var(--text2); margin-top:2px; }
+  .ov-acct-stats { display:flex; gap:24px; margin-top:10px; }
+  .ov-acct-stat { display:flex; flex-direction:column; gap:2px; }
+  .ov-acct-stat-val { font-size:16px; font-weight:700; }
+  .ov-acct-stat-lbl { font-size:11px; color:var(--text3); }
+  .ov-acct-actions { display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink:0; }
+  .ov-bottom-row { display:flex; gap:12px; }
+  @media (max-width: 1100px) {
+    .ov-stat-row { grid-template-columns:1fr 1fr; }
+    .ov-main-grid { grid-template-columns:1fr; }
+    .ov-bottom-row { flex-direction:column; }
+    .ov-bottom-row > div:last-child { width:100%; }
+  }
+
+  /* ── SETTINGS ── */
+  .settings-tabs {
+    display:flex; gap:4px; background:var(--bg3); border-radius:8px;
+    padding:4px; width:fit-content;
+  }
+  .settings-tab {
+    padding:6px 18px; border-radius:6px; border:none; background:transparent;
+    color:var(--text2); font-size:13px; cursor:pointer; transition:all 0.15s;
+  }
+  .settings-tab.active { background:var(--bg2); color:var(--text); font-weight:500; }
+  .settings-tab:hover:not(.active) { color:var(--text); }
+  .settings-section { display:none; flex-direction:column; gap:16px; max-width:540px; }
+  .settings-section.active { display:flex; }
+  .s-plan-pill {
+    display:inline-flex; align-items:center; padding:5px 14px; border-radius:20px;
+    font-size:12px; font-weight:600; letter-spacing:0.3px;
+  }
+  .s-plan-starter { background:rgba(144,144,160,0.15); color:var(--text2); }
+  .s-plan-pro     { background:rgba(59,130,246,0.15); color:var(--blue); }
+  .s-plan-agency  { background:var(--accent-dim); color:var(--accent); }
+  .s-feature-row  {
+    display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text2);
+  }
+  .s-feature-check { color:var(--green); font-size:15px; flex-shrink:0; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -471,14 +594,14 @@
       <button class="nav-item" onclick="showPanel('scripts')" id="nav-scripts">
         <span class="icon">🤖</span> Scripts
       </button>
-      <button class="nav-item" onclick="showPanel('fans')" id="nav-fans">
-        <span class="icon">👥</span> Fans
-      </button>
       <button class="nav-item" onclick="showPanel('accounts')" id="nav-accounts">
         <span class="icon">🔗</span> Accounts
       </button>
       <button class="nav-item" onclick="showPanel('team')" id="nav-team">
         <span class="icon">🏢</span> Team
+      </button>
+      <button class="nav-item" onclick="showPanel('settings')" id="nav-settings">
+        <span class="icon">⚙️</span> Settings
       </button>
     </nav>
     <div class="sidebar-bottom">
@@ -498,38 +621,87 @@
 
     <!-- ── OVERVIEW ── -->
     <div class="panel active" id="panel-overview">
-      <div>
-        <div class="panel-title">Overview</div>
-        <div class="panel-subtitle" id="overview-sub">Loading your dashboard...</div>
-      </div>
-      <div class="stat-grid" id="stat-grid">
-        <div class="stat-card"><div class="stat-label">Total Earnings (30d)</div><div class="stat-value" id="stat-earn">—</div></div>
-        <div class="stat-card"><div class="stat-label">Subscribers</div><div class="stat-value" id="stat-subs">—</div></div>
-        <div class="stat-card"><div class="stat-label">New Today</div><div class="stat-value" id="stat-new">—</div></div>
-        <div class="stat-card"><div class="stat-label">Active Accounts</div><div class="stat-value" id="stat-accts">—</div></div>
-        <div class="stat-card"><div class="stat-label">Team Members</div><div class="stat-value" id="stat-team">—</div></div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Connected Accounts</div>
-          <button class="btn-sm primary" onclick="showPanel('accounts')">Manage</button>
+      <!-- Header row -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div class="panel-title" id="overview-greeting">Overview</div>
+          <div class="panel-subtitle" id="overview-sub">Loading your dashboard...</div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Account</th><th>Status</th><th>Last Synced</th></tr></thead>
-            <tbody id="accts-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-          </table>
+        <div class="ov-period-row" id="ov-period-row">
+          <div class="a-period-pill active" onclick="setOvPeriod('today')" id="ovp-today">Today</div>
+          <div class="a-period-pill" onclick="setOvPeriod('yesterday')" id="ovp-yesterday">Yesterday</div>
+          <div class="a-period-pill" onclick="setOvPeriod('7d')" id="ovp-7d">7d</div>
+          <div class="a-period-pill" onclick="setOvPeriod('14d')" id="ovp-14d">14d</div>
+          <div class="a-period-pill" onclick="setOvPeriod('30d')" id="ovp-30d">30d</div>
+          <div class="a-period-pill" onclick="setOvPeriod('month')" id="ovp-month">This month</div>
+          <div class="a-period-pill" onclick="setOvPeriod('year')" id="ovp-year">This year</div>
+          <div class="a-period-pill" onclick="setOvPeriod('all')" id="ovp-all">All time</div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Team</div>
+
+      <!-- KPI stat cards -->
+      <div class="ov-stat-row">
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">Total Revenue</div>
+          <div class="ov-stat-value" id="ov-earn">—</div>
+          <div class="ov-stat-sub" id="ov-earn-sub">Last 30 days</div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
-            <tbody id="team-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-          </table>
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">Subscribers</div>
+          <div class="ov-stat-value" id="ov-subs">—</div>
+          <div class="ov-stat-sub">Active now</div>
+        </div>
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">New Subscribers</div>
+          <div class="ov-stat-value" id="ov-new-subs">—</div>
+          <div class="ov-stat-sub" id="ov-new-sub-label">Last 30 days</div>
+        </div>
+        <div class="ov-stat-card">
+          <div class="ov-stat-label">Active Accounts</div>
+          <div class="ov-stat-value" id="ov-accts">—</div>
+          <div class="ov-stat-sub" id="ov-team-sub">— team members</div>
+        </div>
+      </div>
+
+      <!-- Account cards + Top Spenders -->
+      <div class="ov-main-grid">
+        <div class="ov-account-cards" id="ov-account-cards">
+          <div class="loading">Loading accounts...</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Top Spenders</div>
+            <select id="ov-spenders-acct" onchange="loadOvTopSpenders()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;cursor:pointer;outline:none;max-width:120px;"></select>
+          </div>
+          <div id="ov-top-spenders"><div class="loading">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions + Quick Links -->
+      <div class="ov-bottom-row">
+        <div class="card" style="flex:1;min-width:0;">
+          <div class="card-header">
+            <div class="card-title">Recent Transactions</div>
+            <select id="ov-tx-acct" onchange="loadOvTransactions()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;cursor:pointer;outline:none;max-width:120px;"></select>
+          </div>
+          <div id="ov-recent-tx" style="padding:0 16px;"><div class="loading">Loading...</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;width:260px;flex-shrink:0;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Quick Actions</div></div>
+            <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+              <button class="btn-sm" style="width:100%;text-align:left;padding:10px 12px;font-size:13px;" onclick="showPanel('inbox')">💬 Open Inbox</button>
+              <button class="btn-sm" style="width:100%;text-align:left;padding:10px 12px;font-size:13px;" onclick="showPanel('analytics')">📈 View Analytics</button>
+              <button class="btn-sm" style="width:100%;text-align:left;padding:10px 12px;font-size:13px;" onclick="showPanel('accounts')">🔗 Manage Accounts</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Team</div>
+              <button class="btn-sm" onclick="showPanel('team')">Manage</button>
+            </div>
+            <div id="ov-team"><div class="loading">Loading...</div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -664,29 +836,139 @@
 
     <!-- ── ANALYTICS ── -->
     <div class="panel" id="panel-analytics">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div class="panel-title">Analytics</div>
-          <div class="panel-subtitle">Earnings & subscriber stats across all accounts</div>
-        </div>
-        <select id="analytics-period" onchange="loadAnalytics()" style="width:120px;">
-          <option value="7d">Last 7 days</option>
-          <option value="30d" selected>Last 30 days</option>
-          <option value="90d">Last 90 days</option>
-        </select>
-      </div>
-      <div class="stat-grid" id="analytics-totals">
-        <div class="loading">Loading analytics...</div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Per-Account Breakdown</div></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Account</th><th>Earnings</th><th>Subscribers</th><th>Messages</th><th>Status</th></tr></thead>
-            <tbody id="analytics-table"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
-          </table>
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div class="panel-title">Insights</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn-sm" onclick="loadAnalytics()" id="analytics-refresh-btn">↻ Refresh</button>
+          <span style="font-size:12px;color:var(--text2)">GMT+7</span>
         </div>
       </div>
+
+      <!-- Tabs -->
+      <div class="a-tabs">
+        <button class="a-tab active" onclick="switchAnalyticsTab('earnings')" id="atab-earnings">Earnings</button>
+        <button class="a-tab" onclick="switchAnalyticsTab('monthly')" id="atab-monthly">Monthly Earnings</button>
+        <button class="a-tab" onclick="switchAnalyticsTab('subscribers')" id="atab-subscribers">Subscribers</button>
+      </div>
+
+      <!-- Period pills -->
+      <div class="a-period-row">
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('today')" id="aperiod-today">Today</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('yesterday')" id="aperiod-yesterday">Yesterday</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('7d')" id="aperiod-7d">Last 7 days</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('14d')" id="aperiod-14d">Last 14 days</div>
+        <div class="a-period-pill active" onclick="setAnalyticsPeriod('30d')" id="aperiod-30d">Last 30 days</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('month')" id="aperiod-month">This month</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('year')" id="aperiod-year">This year</div>
+        <div class="a-period-pill" onclick="setAnalyticsPeriod('all')" id="aperiod-all">All time</div>
+      </div>
+
+      <!-- Stat cards row -->
+      <div class="a-stat-row">
+        <div class="a-stat-card">
+          <div class="a-stat-card-label">Earnings <span style="color:var(--text3)">ⓘ</span></div>
+          <div class="a-stat-card-value" id="a-earnings-total">—</div>
+          <div class="a-stat-card-sub" id="a-earnings-sub">All time</div>
+          <canvas id="chart-sparkline-total" class="a-sparkline"></canvas>
+        </div>
+        <div class="a-stat-card">
+          <div class="a-stat-card-label">This month <span style="color:var(--text3)">ⓘ</span></div>
+          <div class="a-stat-card-value" id="a-earnings-month">—</div>
+          <div class="a-stat-card-sub" id="a-earnings-month-name"></div>
+          <div id="a-month-vs-badge" style="display:none;" class="a-vs-badge"></div>
+          <canvas id="chart-sparkline-month" class="a-sparkline"></canvas>
+        </div>
+        <div class="a-stat-card a-stat-promo">
+          <div style="font-size:22px;margin-bottom:6px">⭐</div>
+          <div style="font-size:14px;font-weight:600;">You are in the top <span id="a-top-pct">—</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px;line-height:1.5;">Want to earn more? Checkout more suggestions for increased revenue!</div>
+          <button class="a-promo-btn">Get Tips →</button>
+        </div>
+      </div>
+
+      <!-- Main 2-col grid -->
+      <div class="a-main-grid">
+
+        <!-- Left column -->
+        <div class="a-col-left">
+
+          <!-- Earnings over time chart -->
+          <div class="a-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div style="font-size:14px;font-weight:600;">Earnings over time</div>
+              <div class="a-toggle">
+                <button class="a-toggle-btn active" id="tog-net" onclick="setEarningsView('net')">Net</button>
+                <button class="a-toggle-btn" id="tog-gross" onclick="setEarningsView('gross')">Gross</button>
+              </div>
+            </div>
+            <canvas id="chart-earnings-time" style="max-height:220px;"></canvas>
+          </div>
+
+          <!-- Earnings breakdown table -->
+          <div class="a-card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Earnings breakdown</div>
+            <canvas id="chart-earnings-timeline" style="max-height:100px;margin-bottom:8px;"></canvas>
+            <div id="a-breakdown-table"><div class="loading">Loading...</div></div>
+          </div>
+
+          <!-- Total vs Previous comparison chart -->
+          <div class="a-card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Total earnings vs Previous earnings</div>
+            <canvas id="chart-comparison" style="max-height:200px;"></canvas>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+              <span style="font-size:12px;color:var(--text2);">Total</span>
+            </div>
+          </div>
+
+          <!-- Avg by day + hour -->
+          <div class="a-bottom-pair">
+            <div class="a-card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Avg Earnings by Day</div>
+              <canvas id="chart-by-day" style="max-height:200px;"></canvas>
+            </div>
+            <div class="a-card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Avg Earnings by Time</div>
+              <canvas id="chart-by-hour" style="max-height:200px;"></canvas>
+            </div>
+          </div>
+
+        </div><!-- /col-left -->
+
+        <!-- Right column -->
+        <div class="a-col-right">
+
+          <!-- Top spenders -->
+          <div class="a-card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Top spenders</div>
+            <div id="a-top-spenders"><div class="loading">Loading...</div></div>
+            <button class="a-see-more" id="a-see-more-btn" onclick="toggleAllSpenders()" style="display:none;">▾ See more</button>
+          </div>
+
+          <!-- Recent transactions -->
+          <div class="a-card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <div style="font-size:14px;font-weight:600;">Recent transactions</div>
+              <span class="a-live-badge">● Live</span>
+            </div>
+            <div id="a-recent-tx"><div class="loading">Loading...</div></div>
+          </div>
+
+          <!-- Earnings by Type donut -->
+          <div class="a-card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Earnings by Type</div>
+            <div style="display:flex;justify-content:center;position:relative;">
+              <canvas id="chart-donut" style="max-height:180px;max-width:180px;"></canvas>
+            </div>
+            <div id="a-donut-legend" style="margin-top:12px;"></div>
+          </div>
+
+        </div><!-- /col-right -->
+
+      </div><!-- /a-main-grid -->
+
     </div>
 
     <!-- ── SCRIPTS ── -->
@@ -765,6 +1047,115 @@
             <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
             <tbody id="full-team-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="panel" id="panel-settings">
+      <div>
+        <div class="panel-title">Settings</div>
+        <div class="panel-subtitle">Manage your profile, security, and organization</div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="settings-tabs" id="settings-tabs">
+        <button class="settings-tab active" onclick="showSettingsTab('profile')">My Profile</button>
+        <button class="settings-tab" onclick="showSettingsTab('security')">Security</button>
+        <button class="settings-tab" id="stab-org" onclick="showSettingsTab('org')">Organization</button>
+        <button class="settings-tab" id="stab-billing" onclick="showSettingsTab('billing')">Billing</button>
+      </div>
+
+      <!-- ── Profile ── -->
+      <div class="settings-section active" id="ssec-profile">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Profile</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+            <div class="field">
+              <label>Display Name</label>
+              <input type="text" id="s-name" placeholder="Your name" />
+            </div>
+            <div class="field">
+              <label>Email <span style="color:var(--text3);font-weight:400;">(cannot be changed)</span></label>
+              <input type="email" id="s-email" disabled style="opacity:0.5;cursor:not-allowed;" />
+            </div>
+            <div class="field">
+              <label>Role</label>
+              <div id="s-role-badge" style="margin-top:2px;"></div>
+            </div>
+            <div>
+              <button class="btn-primary" style="width:auto;padding:10px 24px;" onclick="saveProfile()">Save changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Security ── -->
+      <div class="settings-section" id="ssec-security">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Change Password</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+            <div class="field">
+              <label>Current Password</label>
+              <input type="password" id="s-cur-pass" placeholder="••••••••" />
+            </div>
+            <div class="field">
+              <label>New Password</label>
+              <input type="password" id="s-new-pass" placeholder="Min. 8 characters" />
+            </div>
+            <div class="field">
+              <label>Confirm New Password</label>
+              <input type="password" id="s-conf-pass" placeholder="••••••••" />
+            </div>
+            <div>
+              <button class="btn-primary" style="width:auto;padding:10px 24px;" onclick="savePassword()">Update password</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Organization ── -->
+      <div class="settings-section" id="ssec-org">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Organization</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+            <div class="field">
+              <label>Agency Name</label>
+              <input type="text" id="s-org-name" placeholder="Your agency name" />
+            </div>
+            <div class="field">
+              <label>Plan</label>
+              <div id="s-plan-badge" style="margin-top:2px;"></div>
+            </div>
+            <div id="s-org-save-wrap">
+              <button class="btn-primary" style="width:auto;padding:10px 24px;" onclick="saveOrg()">Save changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Billing ── -->
+      <div class="settings-section" id="ssec-billing">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Billing &amp; Plan</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px 20px;">
+              <div>
+                <div style="font-size:12px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Current Plan</div>
+                <div id="s-billing-plan" style="font-size:22px;font-weight:700;letter-spacing:-0.5px;">—</div>
+                <div id="s-billing-member-since" style="font-size:12px;color:var(--text3);margin-top:4px;">—</div>
+              </div>
+              <div id="s-billing-badge"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="font-size:13px;font-weight:600;">Plan features</div>
+              <div id="s-plan-features" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:16px;">
+              <button class="btn-primary" style="width:100%;padding:12px;" onclick="toast('Contact us to upgrade your plan','info')">Upgrade Plan →</button>
+              <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:8px;">Contact support to change your plan</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -943,65 +1334,203 @@ function showPanel(name) {
   document.getElementById('nav-' + name).classList.add('active');
   if (name === 'analytics') loadAnalytics();
   if (name === 'scripts') loadScripts();
-  if (name === 'fans') populateAcctSelect('fans-acct');
   if (name === 'accounts') loadAccountsPanel();
   if (name === 'team') loadFullTeam();
+  if (name === 'settings') loadSettings();
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────
+let ovPeriod = 'today';
+const ovPeriodLabels = { today:'Today', yesterday:'Yesterday', '7d':'Last 7 days', '14d':'Last 14 days', '30d':'Last 30 days', month:'This month', year:'This year', all:'All time' };
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+function setOvPeriod(p) {
+  ovPeriod = p;
+  document.querySelectorAll('#ov-period-row .a-period-pill').forEach(el => el.classList.remove('active'));
+  const pill = document.getElementById('ovp-' + p);
+  if (pill) pill.classList.add('active');
+  loadOverviewAnalytics();
+}
+
 async function loadDashboard() {
   try {
     const d = await api('/api/dashboard');
     document.getElementById('org-name').textContent = d.org?.name || 'Your Agency';
-    document.getElementById('overview-sub').textContent = `Welcome back, ${currentUser.name}`;
-    document.getElementById('stat-earn').textContent = fmt(d.totals?.totalEarnings);
-    document.getElementById('stat-subs').textContent = fmtNum(d.totals?.totalSubscribers);
-    document.getElementById('stat-new').textContent = fmtNum(d.totals?.newSubscribersToday);
-    document.getElementById('stat-accts').textContent = d.accounts?.active ?? '—';
-    document.getElementById('stat-team').textContent = d.team?.total ?? '—';
+    const firstName = (currentUser.name || '').split(' ')[0] || 'there';
+    document.getElementById('overview-greeting').textContent = `Good ${getGreeting()}, ${firstName} 👋`;
+    document.getElementById('overview-sub').textContent = d.org?.name || 'Your agency dashboard';
+    document.getElementById('ov-accts').textContent = d.accounts?.active ?? '—';
+    document.getElementById('ov-team-sub').textContent = `${d.team?.total ?? 0} team member${d.team?.total === 1 ? '' : 's'}`;
 
     accounts = d.accounts?.all || [];
     populateAcctSelects();
 
-    // Accounts table
-    const tbody = document.getElementById('accts-table');
-    if (!accounts.length) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty">No accounts connected yet</td></tr>';
-    } else {
-      tbody.innerHTML = accounts.map(a => `
-        <tr>
-          <td><div style="display:flex;align-items:center;gap:8px;">
-            ${a.avatar_url ? `<img src="${a.avatar_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;">${(a.label||'?')[0]}</div>`}
-            <div><div style="font-weight:500;">${a.label || a.fanvue_display_name || a.fanvue_username}</div>
-            <div style="font-size:11px;color:var(--text3);">@${a.fanvue_username||''}</div></div>
-          </div></td>
-          <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
-          <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
-        </tr>`).join('');
-    }
+    // Populate per-overview widget account selectors
+    const activeAccounts = accounts.filter(a => a.is_active);
+    ['ov-spenders-acct', 'ov-tx-acct'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      if (!sel) return;
+      sel.innerHTML = activeAccounts.map(a => `<option value="${a.id}">${a.label || a.fanvue_username}</option>`).join('');
+    });
 
-    // Team table
-    const ttbody = document.getElementById('team-table');
+    // Team widget
     const team = d.team?.members || [];
-    if (!team.length) {
-      ttbody.innerHTML = '<tr><td colspan="3" class="empty">No team members</td></tr>';
-    } else {
-      ttbody.innerHTML = team.map(u => `
-        <tr>
-          <td style="font-weight:500">${u.name}</td>
-          <td style="color:var(--text2)">${u.email}</td>
-          <td>${roleBadge(u.role)}</td>
-        </tr>`).join('');
-    }
+    document.getElementById('ov-team').innerHTML = team.length
+      ? team.map(u => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);">
+          <div class="user-avatar" style="flex-shrink:0;width:30px;height:30px;font-size:11px;">${(u.name||'?')[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name}</div>
+            <div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.email}</div>
+          </div>
+          ${roleBadge(u.role)}
+        </div>`).join('')
+      : '<div class="empty">No team members</div>';
 
-    // Inbox badge
-    const unreadCount = d.accounts?.all?.reduce((a,b) => a + (b.unread_count || 0), 0) || 0;
+    // Inbox unread badge
+    const unreadCount = accounts.reduce((a, b) => a + (b.unread_count || 0), 0);
     const badge = document.getElementById('inbox-badge');
     badge.style.display = unreadCount ? 'inline' : 'none';
     badge.textContent = unreadCount;
 
+    // Load analytics (earnings, subs, per-account cards)
+    await loadOverviewAnalytics();
+
   } catch (e) {
     toast(e.message, 'error');
+  }
+}
+
+async function loadOverviewAnalytics() {
+  const label = ovPeriodLabels[ovPeriod] || ovPeriod;
+  ['ov-earn', 'ov-subs', 'ov-new-subs'].forEach(id => { document.getElementById(id).textContent = '—'; });
+  document.getElementById('ov-earn-sub').textContent = label;
+  document.getElementById('ov-new-sub-label').textContent = label;
+  document.getElementById('ov-account-cards').innerHTML = '<div class="loading">Loading...</div>';
+
+  try {
+    const d = await api(`/api/analytics/overview?period=${ovPeriod}`);
+    document.getElementById('ov-earn').textContent = fmt(d.totals?.earnings);
+    document.getElementById('ov-subs').textContent = fmtNum(d.totals?.subscribers);
+    document.getElementById('ov-new-subs').textContent = fmtNum(d.totals?.newSubscribers);
+
+    const acctCards = document.getElementById('ov-account-cards');
+    if (!d.accounts?.length) {
+      acctCards.innerHTML = '<div class="empty">No active accounts connected</div>';
+    } else {
+      acctCards.innerHTML = d.accounts.map(a => {
+        const initials = (a.label || a.fanvue_username || '?')[0].toUpperCase();
+        const avatarInner = a.avatar_url
+          ? `<img src="${a.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';">`
+          : initials;
+        return `
+        <div class="ov-acct-card">
+          <div class="ov-acct-avatar">${avatarInner}</div>
+          <div class="ov-acct-info">
+            <div class="ov-acct-name">${a.label || a.fanvue_username}</div>
+            <div class="ov-acct-handle">@${a.fanvue_username || ''}</div>
+            <div class="ov-acct-stats">
+              <div class="ov-acct-stat">
+                <div class="ov-acct-stat-val" style="color:var(--green);">${fmt(a.earnings)}</div>
+                <div class="ov-acct-stat-lbl">${label}</div>
+              </div>
+              <div class="ov-acct-stat">
+                <div class="ov-acct-stat-val">${fmtNum(a.subscriberCount)}</div>
+                <div class="ov-acct-stat-lbl">Subscribers</div>
+              </div>
+              <div class="ov-acct-stat">
+                <div class="ov-acct-stat-val">${fmtNum(a.newSubscribers)}</div>
+                <div class="ov-acct-stat-lbl">New ${label}</div>
+              </div>
+            </div>
+          </div>
+          <div class="ov-acct-actions">
+            <button class="btn-sm primary" onclick="showPanel('analytics')">Analytics →</button>
+            <button class="btn-sm" onclick="showPanel('inbox')">Inbox</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  } catch (e) {
+    document.getElementById('ov-account-cards').innerHTML = '<div class="empty">Failed to load data</div>';
+    console.error('[Overview] analytics error:', e.message);
+  }
+
+  loadOvTopSpenders();
+  loadOvTransactions();
+}
+
+async function loadOvTopSpenders() {
+  const sel = document.getElementById('ov-spenders-acct');
+  const acctId = sel?.value;
+  if (!acctId) return;
+  const el = document.getElementById('ov-top-spenders');
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const d = await api(`/api/analytics/${acctId}/top-spenders?size=8`);
+    if (!d.data?.length) { el.innerHTML = '<div class="empty">No spenders yet</div>'; return; }
+    el.innerHTML = d.data.slice(0, 8).map((f, i) => {
+      const initials = (f.display_name || f.username || '?')[0]?.toUpperCase() || '?';
+      const avatarEl = f.avatar_url
+        ? `<img src="${f.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0;" onerror="this.style.display='none';">`
+        : `<div class="a-avatar sm" style="flex-shrink:0;">${initials}</div>`;
+      return `
+      <div class="a-spender-row" style="padding:9px 14px;">
+        <div style="font-size:12px;color:var(--text3);width:18px;text-align:right;flex-shrink:0;">${i + 1}</div>
+        ${avatarEl}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.display_name || f.username || 'Fan'}</div>
+          ${f.username ? `<div style="font-size:11px;color:var(--text3);">@${f.username}</div>` : ''}
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--green);flex-shrink:0;">${fmt(f.gross || f.net || 0)}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load</div>';
+  }
+}
+
+async function loadOvTransactions() {
+  const sel = document.getElementById('ov-tx-acct');
+  const acctId = sel?.value;
+  if (!acctId) return;
+  const el = document.getElementById('ov-recent-tx');
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  const sourceColors = { subscription: 'var(--accent)', tip: 'var(--green)', ppv: 'var(--orange)', message: 'var(--blue)' };
+  const sourceLabels = { subscription: 'Sub', tip: 'Tip', ppv: 'PPV', message: 'Msg' };
+  try {
+    const d = await api(`/api/analytics/${acctId}/earnings?period=30d`);
+    const txs = (d.data || [])
+      .sort((a, b) => new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0))
+      .slice(0, 12);
+    if (!txs.length) { el.innerHTML = '<div class="empty">No transactions</div>'; return; }
+    el.innerHTML = txs.map(tx => {
+      const src = tx.source || 'other';
+      const color = sourceColors[src] || 'var(--text2)';
+      const srcLabel = sourceLabels[src] || src;
+      const ts = tx.createdAt || tx.created_at;
+      const fanName = tx.user?.displayName || tx.user?.handle || tx.fan_display_name || tx.fan_username || '';
+      return `
+      <div class="a-tx-row">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${color};flex-shrink:0;">${srcLabel[0]}</div>
+        <div class="a-tx-info" style="flex:1;">
+          <div style="font-size:13px;color:var(--text);font-weight:500;">${srcLabel}</div>
+          ${fanName ? `<div style="font-size:11px;color:var(--text3);">from ${fanName}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:13px;font-weight:700;color:${color};">+${fmt(tx.gross || 0)}</div>
+          <div style="font-size:11px;color:var(--text3);">${timeAgo(ts)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load</div>';
   }
 }
 
@@ -1010,10 +1539,113 @@ function roleBadge(role) {
   return `<span class="badge ${map[role]||'badge-gray'}">${role}</span>`;
 }
 
+// ─── SETTINGS ─────────────────────────────────────────────
+const planFeatures = {
+  starter: ['Up to 3 connected accounts', 'Inbox & messaging', 'Basic analytics', 'Team up to 3 members'],
+  pro:     ['Up to 10 connected accounts', 'Full analytics & insights', 'Top spenders tracking', 'Team up to 10 members', 'Priority support'],
+  agency:  ['Unlimited connected accounts', 'Full analytics & insights', 'Top spenders tracking', 'Unlimited team members', 'Dedicated account manager', 'Custom integrations']
+};
+
+async function loadSettings() {
+  try {
+    const { user, org } = await api('/api/settings');
+
+    // Profile tab
+    document.getElementById('s-name').value = user.name || '';
+    document.getElementById('s-email').value = user.email || '';
+    document.getElementById('s-role-badge').innerHTML = roleBadge(user.role);
+
+    // Org tab — hide save button + name input for non-owners
+    document.getElementById('s-org-name').value = org.name || '';
+    const isOwner = user.role === 'owner';
+    const isManager = user.role === 'manager';
+    document.getElementById('s-org-name').disabled = !isOwner;
+    if (!isOwner) document.getElementById('s-org-name').style.opacity = '0.5';
+    document.getElementById('s-org-save-wrap').style.display = isOwner ? '' : 'none';
+
+    // Hide Org + Billing tabs for chatters
+    document.getElementById('stab-org').style.display = (isOwner || isManager) ? '' : 'none';
+    document.getElementById('stab-billing').style.display = isOwner ? '' : 'none';
+
+    // Plan badge
+    const plan = org.plan || 'starter';
+    const planClass = { starter: 's-plan-starter', pro: 's-plan-pro', agency: 's-plan-agency' }[plan] || 's-plan-starter';
+    const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+    document.getElementById('s-plan-badge').innerHTML = `<span class="s-plan-pill ${planClass}">${planLabel}</span>`;
+
+    // Billing tab
+    document.getElementById('s-billing-plan').textContent = planLabel;
+    document.getElementById('s-billing-badge').innerHTML = `<span class="s-plan-pill ${planClass}" style="font-size:13px;">${planLabel}</span>`;
+    const since = org.created_at ? `Member since ${new Date(org.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' })}` : '';
+    document.getElementById('s-billing-member-since').textContent = since;
+    const features = planFeatures[plan] || planFeatures.starter;
+    document.getElementById('s-plan-features').innerHTML = features.map(f =>
+      `<div class="s-feature-row"><span class="s-feature-check">✓</span>${f}</div>`
+    ).join('');
+
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+function showSettingsTab(tab) {
+  document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.settings-section').forEach(el => el.classList.remove('active'));
+  // Match button by onclick attribute pattern
+  document.querySelectorAll('.settings-tab').forEach(el => {
+    if (el.getAttribute('onclick') === `showSettingsTab('${tab}')`) el.classList.add('active');
+  });
+  document.getElementById(`ssec-${tab}`)?.classList.add('active');
+}
+
+async function saveProfile() {
+  const name = document.getElementById('s-name').value.trim();
+  if (!name) { toast('Name cannot be empty', 'error'); return; }
+  try {
+    await api('/api/settings/profile', { method: 'PATCH', body: { name } });
+    currentUser.name = name;
+    document.getElementById('user-name').textContent = name;
+    document.getElementById('overview-greeting').textContent = `Good ${getGreeting()}, ${name.split(' ')[0]} 👋`;
+    toast('Profile updated', 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function savePassword() {
+  const currentPassword = document.getElementById('s-cur-pass').value;
+  const newPassword     = document.getElementById('s-new-pass').value;
+  const confirmPassword = document.getElementById('s-conf-pass').value;
+  if (!currentPassword || !newPassword || !confirmPassword) { toast('All password fields are required', 'error'); return; }
+  if (newPassword !== confirmPassword) { toast('New passwords do not match', 'error'); return; }
+  if (newPassword.length < 8) { toast('Password must be at least 8 characters', 'error'); return; }
+  try {
+    await api('/api/settings/password', { method: 'PATCH', body: { currentPassword, newPassword } });
+    document.getElementById('s-cur-pass').value = '';
+    document.getElementById('s-new-pass').value = '';
+    document.getElementById('s-conf-pass').value = '';
+    toast('Password updated successfully', 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function saveOrg() {
+  const name = document.getElementById('s-org-name').value.trim();
+  if (!name) { toast('Organization name cannot be empty', 'error'); return; }
+  try {
+    await api('/api/settings/organization', { method: 'PATCH', body: { name } });
+    document.getElementById('org-name').textContent = name;
+    document.getElementById('overview-sub').textContent = name;
+    toast('Organization updated', 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
 // ─── ACCOUNTS ─────────────────────────────────────────────
 function populateAcctSelects() {
   populateAcctSelect('inbox-acct');
-  populateAcctSelect('fans-acct');
 }
 
 function populateAcctSelect(selectId) {
@@ -1084,41 +1716,382 @@ async function reconnectAccount(id) {
 }
 
 // ─── ANALYTICS ─────────────────────────────────────────────
+// ─── ANALYTICS (redesigned) ────────────────────────────────────────────────
+let analyticsView = 'net';
+let analyticsCharts = {};
+let analyticsAllSpenders = [];
+let analyticsShowAll = false;
+let analyticsPeriod = '30d';
+let analyticsEarningsData = null;
+
+function setAnalyticsPeriod(period) {
+  analyticsPeriod = period;
+  document.querySelectorAll('.a-period-pill').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('aperiod-' + period);
+  if (el) el.classList.add('active');
+  loadAnalytics();
+}
+
+function switchAnalyticsTab(tab) {
+  document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('atab-' + tab);
+  if (el) el.classList.add('active');
+  loadAnalytics();
+}
+
+function setEarningsView(view) {
+  analyticsView = view;
+  document.getElementById('tog-net').classList.toggle('active', view === 'net');
+  document.getElementById('tog-gross').classList.toggle('active', view === 'gross');
+  if (analyticsEarningsData) {
+    renderEarningsTimeChart(analyticsEarningsData);
+    renderComparisonChart(analyticsEarningsData);
+    renderSparklines(analyticsEarningsData);
+  }
+}
+
+function toggleAllSpenders() {
+  analyticsShowAll = !analyticsShowAll;
+  renderTopSpenders(analyticsAllSpenders);
+}
+
+function destroyCharts() {
+  Object.values(analyticsCharts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  analyticsCharts = {};
+}
+
 async function loadAnalytics() {
-  const period = document.getElementById('analytics-period').value;
-  const totalsEl = document.getElementById('analytics-totals');
-  const tbody = document.getElementById('analytics-table');
-  totalsEl.innerHTML = '<div class="loading">Loading analytics...</div>';
-  tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+  destroyCharts();
+  document.getElementById('a-earnings-total').textContent = '—';
+  document.getElementById('a-earnings-month').textContent = '—';
+  document.getElementById('a-month-vs-badge').style.display = 'none';
+  document.getElementById('a-top-spenders').innerHTML = '<div class="loading">Loading...</div>';
+  document.getElementById('a-recent-tx').innerHTML = '<div class="loading">Loading...</div>';
+  document.getElementById('a-breakdown-table').innerHTML = '<div class="loading">Loading...</div>';
+  document.getElementById('a-donut-legend').innerHTML = '';
+  document.getElementById('a-top-pct').textContent = '—';
+
+  const period = analyticsPeriod;
+
   try {
-    const d = await api(`/api/analytics/overview?period=${period}`);
-    const t = d.totals;
-    totalsEl.innerHTML = `
-      <div class="stat-card"><div class="stat-label">Total Earnings</div><div class="stat-value">${fmt(t.earnings)}</div><div class="stat-sub">${period}</div></div>
-      <div class="stat-card"><div class="stat-label">Subscribers</div><div class="stat-value">${fmtNum(t.subscribers)}</div></div>
-      <div class="stat-card"><div class="stat-label">New Subscribers</div><div class="stat-value">${fmtNum(t.newSubscribers)}</div></div>
-      <div class="stat-card"><div class="stat-label">Total Messages</div><div class="stat-value">${fmtNum(t.messages)}</div></div>
-    `;
-    if (!d.accounts?.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No account data available</td></tr>';
+    const overview = await api(`/api/analytics/overview?period=${period}`);
+    const totals = overview.totals;
+
+    document.getElementById('a-earnings-total').textContent = fmt(totals.earnings);
+    const periodLabels = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 days', '14d': 'Last 14 days', '30d': 'Last 30 days', month: 'This month', year: 'This year', all: 'All time' };
+    document.getElementById('a-earnings-sub').textContent = periodLabels[period] || ('Last ' + period);
+
+    const now = new Date();
+    document.getElementById('a-earnings-month-name').textContent =
+      now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    if (!overview.accounts || !overview.accounts.length) {
+      document.getElementById('a-earnings-month').textContent = '—';
+      ['a-top-spenders','a-recent-tx','a-breakdown-table'].forEach(id => {
+        document.getElementById(id).innerHTML = '<div class="empty">No accounts connected</div>';
+      });
       return;
     }
-    tbody.innerHTML = d.accounts.map(a => `
-      <tr>
-        <td><div style="display:flex;align-items:center;gap:8px;">
-          ${a.avatar_url ? `<img src="${a.avatar_url}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : ''}
-          <span style="font-weight:500">${a.label || a.fanvue_username || '—'}</span>
-        </div></td>
-        <td style="color:var(--green);font-weight:600">${fmt(a.earnings?.total)}</td>
-        <td>${fmtNum(a.stats?.subscriberCount)}</td>
-        <td>${fmtNum(a.stats?.messageCount)}</td>
-        <td>${a.error ? '<span class="badge badge-red">Error</span>' : '<span class="badge badge-green">OK</span>'}</td>
-      </tr>`).join('');
+
+    const acct = overview.accounts[0];
+    const accountId = acct.accountId;
+
+    const [earningsRes, spendersRes] = await Promise.allSettled([
+      api(`/api/analytics/${accountId}/earnings?period=${period}`),
+      api(`/api/analytics/${accountId}/top-spenders?page=1&size=20`)
+    ]);
+
+    if (earningsRes.status === 'fulfilled') {
+      const ed = earningsRes.value;
+      analyticsEarningsData = ed.data || [];
+
+      // This month total
+      const thisMonth = analyticsEarningsData.filter(tx => {
+        const d = new Date(tx.date || tx.created_at || tx.createdAt || 0);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+      const monthTotal = thisMonth.reduce((s, t) => s + (t[analyticsView] || t.net || 0), 0);
+      document.getElementById('a-earnings-month').textContent = fmt(monthTotal);
+
+      // vs prev month badge
+      const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonth = analyticsEarningsData.filter(tx => {
+        const d = new Date(tx.date || tx.created_at || tx.createdAt || 0);
+        return d.getMonth() === prevMonthDate.getMonth() && d.getFullYear() === prevMonthDate.getFullYear();
+      });
+      const prevTotal = prevMonth.reduce((s, t) => s + (t[analyticsView] || t.net || 0), 0);
+      if (monthTotal > 0 || prevTotal > 0) {
+        const diff = monthTotal - prevTotal;
+        const badge = document.getElementById('a-month-vs-badge');
+        badge.style.display = 'inline-flex';
+        badge.style.background = diff >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)';
+        badge.style.color = diff >= 0 ? '#22c55e' : '#ef4444';
+        const prevName = prevMonthDate.toLocaleString('default', { month: 'short' });
+        badge.textContent = (diff >= 0 ? '+' : '') + fmt(diff) + ' vs ' + prevName;
+      }
+
+      renderEarningsTimeChart(analyticsEarningsData);
+      renderBreakdownTable(ed.breakdown || {}, ed.total || 0);
+      renderRecentTransactions(analyticsEarningsData);
+      renderDonutChart(ed.breakdown || {});
+      renderComparisonChart(analyticsEarningsData);
+      renderByDayChart(analyticsEarningsData);
+      renderByHourChart(analyticsEarningsData);
+      renderSparklines(analyticsEarningsData);
+    } else {
+      ['a-recent-tx','a-breakdown-table'].forEach(id => {
+        document.getElementById(id).innerHTML = '<div class="empty">Could not load earnings data</div>';
+      });
+    }
+
+    if (spendersRes.status === 'fulfilled') {
+      analyticsAllSpenders = spendersRes.value.data || [];
+      analyticsShowAll = false;
+      renderTopSpenders(analyticsAllSpenders);
+    } else {
+      document.getElementById('a-top-spenders').innerHTML = '<div class="empty">No data</div>';
+    }
+
   } catch (e) {
-    totalsEl.innerHTML = `<div class="empty">Failed to load analytics: ${e.message}</div>`;
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">${e.message}</td></tr>`;
     toast('Analytics error: ' + e.message, 'error');
+    console.error('[Analytics]', e);
   }
+}
+
+function renderTopSpenders(data) {
+  const el = document.getElementById('a-top-spenders');
+  const btn = document.getElementById('a-see-more-btn');
+  const visible = analyticsShowAll ? data : data.slice(0, 3);
+  if (!data.length) {
+    el.innerHTML = '<div class="empty">No spenders yet</div>';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  el.innerHTML = visible.map(f => {
+    const name = f.display_name || f.username || f.fan_username || f.fan?.display_name || 'Unknown';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const amount = fmt(f.gross || f.net || 0);
+    return `<div class="a-spender-row">
+      <div class="a-avatar">${initials}</div>
+      <div style="flex:1;font-size:13px;font-weight:500;">${name}</div>
+      <div style="font-size:14px;font-weight:700;">${amount}</div>
+    </div>`;
+  }).join('');
+  if (btn) {
+    btn.style.display = data.length > 3 ? 'block' : 'none';
+    btn.innerHTML = analyticsShowAll ? '▴ Show less' : '▾ See more';
+  }
+}
+
+function renderRecentTransactions(data) {
+  const el = document.getElementById('a-recent-tx');
+  const sorted = [...data].sort((a, b) => {
+    return new Date(b.date || b.created_at || b.createdAt || 0) - new Date(a.date || a.created_at || a.createdAt || 0);
+  });
+  const recent = sorted.slice(0, 6);
+  if (!recent.length) { el.innerHTML = '<div class="empty">No transactions</div>'; return; }
+  const srcLabel = { message:'purchased a message', subscription:'subscribed to your feed',
+    renewal:'renewed their subscription', tip:'sent a tip', post:'purchased a post',
+    referral:'referred a new fan', giveaway:'received a giveaway' };
+  el.innerHTML = recent.map(tx => {
+    const name = tx.fan_display_name || tx.fan_username || tx.fan?.display_name || tx.fan?.username || 'Fan';
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const src = tx.source || 'transaction';
+    const label = srcLabel[src] || src;
+    const amount = fmt(tx.net || tx.gross || 0);
+    const ago = timeAgo(tx.date || tx.created_at || tx.createdAt);
+    return `<div class="a-tx-row">
+      <div class="a-avatar sm">${initials}</div>
+      <div class="a-tx-info">
+        <strong>${name}</strong> ${label}
+        <div class="a-tx-amount">${amount}</div>
+      </div>
+      <div class="a-tx-time">${ago}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderBreakdownTable(breakdown, total) {
+  const el = document.getElementById('a-breakdown-table');
+  const colors = { subscription:'#3b82f6', message:'#f97316', post:'#a855f7',
+    tip:'#ec4899', renewal:'#eab308', referral:'#06b6d4', other:'#6b7280', giveaway:'#22c55e' };
+  const labels = { subscription:'Subs', message:'Messages', post:'Posts',
+    tip:'Tips', renewal:'Renewals', referral:'Referrals', other:'Other', giveaway:'Giveaway' };
+  const entries = Object.entries(breakdown).filter(([,v]) => v >= 0);
+  const rows = [['__total__','Total', total, true], ...entries.map(([k,v]) => [k, labels[k]||k, v, false])];
+  el.innerHTML = rows.map(([key, label, amount, isTotal]) => {
+    const color = isTotal ? '#22c55e' : (colors[key] || '#6b7280');
+    const badge = isTotal && amount > 0 ? `<span class="a-brow-badge">+${fmt(amount)}</span>` : '';
+    return `<div class="a-brow">
+      <span class="a-brow-dot" style="background:${color}"></span>
+      <span class="a-brow-label">${label}</span>
+      <span class="a-brow-amount">${fmt(amount)}</span>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function renderDonutChart(breakdown) {
+  const ctx = document.getElementById('chart-donut');
+  if (!ctx) return;
+  const colors = ['#f97316','#ec4899','#a855f7','#3b82f6','#eab308','#06b6d4','#22c55e','#6b7280'];
+  const entries = Object.entries(breakdown).filter(([,v]) => v > 0);
+  if (!entries.length) return;
+  const labels = entries.map(([k]) => k);
+  const data = entries.map(([,v]) => v);
+  const total = data.reduce((s, v) => s + v, 0);
+  if (analyticsCharts['donut']) analyticsCharts['donut'].destroy();
+  analyticsCharts['donut'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }] },
+    options: {
+      cutout: '72%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.raw)}` } }
+      }
+    }
+  });
+  const labelMap = { subscription:'Subs', message:'Messages', post:'Posts',
+    tip:'Tips', renewal:'Renewals', referral:'Referrals', other:'Other', giveaway:'Giveaway' };
+  const legendEl = document.getElementById('a-donut-legend');
+  legendEl.innerHTML = entries.map(([k, v], i) => {
+    const pct = total > 0 ? v / total : 0;
+    return `<div class="a-donut-legend-row">
+      <span class="a-donut-legend-dot" style="background:${colors[i % colors.length]}"></span>
+      <span class="a-donut-legend-label">${labelMap[k]||k}</span>
+      <div class="a-donut-legend-bar"><div class="a-donut-legend-bar-fill" style="width:${(pct*100).toFixed(0)}%;background:${colors[i % colors.length]};"></div></div>
+      <span class="a-donut-legend-amount">${fmt(v)}</span>
+    </div>`;
+  }).join('');
+}
+
+function buildDailyTotals(data, field) {
+  const byDate = {};
+  data.forEach(tx => {
+    const raw = tx.date || tx.created_at || tx.createdAt;
+    if (!raw) return;
+    const d = new Date(raw).toISOString().split('T')[0];
+    byDate[d] = (byDate[d] || 0) + (tx[field] || 0);
+  });
+  const sorted = Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b));
+  return { labels: sorted.map(([d]) => d), values: sorted.map(([,v]) => v) };
+}
+
+const CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: true,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606070', maxTicksLimit: 8, font: { size: 11 } } },
+    y: { grid: { color: 'rgba(255,255,255,0.04)', borderDash: [4,4] }, ticks: { color: '#606070', font: { size: 11 }, callback: v => '$' + v } }
+  }
+};
+
+function renderEarningsTimeChart(data) {
+  const ctx = document.getElementById('chart-earnings-time');
+  if (!ctx) return;
+  const { labels, values } = buildDailyTotals(data, analyticsView);
+  if (analyticsCharts['earnings-time']) analyticsCharts['earnings-time'].destroy();
+  analyticsCharts['earnings-time'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data: values, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.08)',
+      fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 }] },
+    options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins,
+      tooltip: { callbacks: { label: c => ` ${fmt(c.raw)}` } } } }
+  });
+}
+
+function renderComparisonChart(data) {
+  const ctx = document.getElementById('chart-comparison');
+  if (!ctx) return;
+  const { labels, values } = buildDailyTotals(data, analyticsView);
+  if (analyticsCharts['comparison']) analyticsCharts['comparison'].destroy();
+  analyticsCharts['comparison'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Total', data: values, borderColor: '#22c55e',
+      backgroundColor: 'rgba(34,197,94,0.05)', fill: true, tension: 0.3,
+      pointRadius: 0, borderWidth: 2 }] },
+    options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins,
+      tooltip: { callbacks: { label: c => ` ${fmt(c.raw)}` } } } }
+  });
+}
+
+function renderByDayChart(data) {
+  const ctx = document.getElementById('chart-by-day');
+  if (!ctx) return;
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const totals = new Array(7).fill(0);
+  const counts = new Array(7).fill(0);
+  data.forEach(tx => {
+    const raw = tx.date || tx.created_at || tx.createdAt;
+    if (!raw) return;
+    const dow = (new Date(raw).getDay() + 6) % 7;
+    totals[dow] += tx[analyticsView] || tx.net || 0;
+    counts[dow]++;
+  });
+  const avgs = totals.map((t, i) => counts[i] > 0 ? +(t / counts[i]).toFixed(2) : 0);
+  if (analyticsCharts['by-day']) analyticsCharts['by-day'].destroy();
+  analyticsCharts['by-day'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: days, datasets: [{ data: avgs, backgroundColor: '#ffffff', borderRadius: 4, borderSkipped: false }] },
+    options: { ...CHART_DEFAULTS, scales: { ...CHART_DEFAULTS.scales,
+      x: { ...CHART_DEFAULTS.scales.x, grid: { display: false } } },
+      plugins: { ...CHART_DEFAULTS.plugins, tooltip: { callbacks: { label: c => ` ${fmt(c.raw)}` } } } }
+  });
+}
+
+function renderByHourChart(data) {
+  const ctx = document.getElementById('chart-by-hour');
+  if (!ctx) return;
+  const hourLabels = Array.from({ length: 24 }, (_, i) => {
+    const h = i % 12 || 12;
+    return h + (i < 12 ? 'am' : 'pm');
+  });
+  const totals = new Array(24).fill(0);
+  const counts = new Array(24).fill(0);
+  data.forEach(tx => {
+    const raw = tx.date || tx.created_at || tx.createdAt;
+    if (!raw) return;
+    const h = new Date(raw).getHours();
+    totals[h] += tx[analyticsView] || tx.net || 0;
+    counts[h]++;
+  });
+  const avgs = totals.map((t, i) => counts[i] > 0 ? +(t / counts[i]).toFixed(2) : 0);
+  if (analyticsCharts['by-hour']) analyticsCharts['by-hour'].destroy();
+  analyticsCharts['by-hour'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: hourLabels, datasets: [{ data: avgs, backgroundColor: '#ffffff', borderRadius: 4, borderSkipped: false }] },
+    options: { ...CHART_DEFAULTS, scales: { ...CHART_DEFAULTS.scales,
+      x: { ...CHART_DEFAULTS.scales.x, grid: { display: false }, ticks: { ...CHART_DEFAULTS.scales.x.ticks, maxTicksLimit: 12 } } },
+      plugins: { ...CHART_DEFAULTS.plugins, tooltip: { callbacks: { label: c => ` ${fmt(c.raw)}` } } } }
+  });
+}
+
+function makeSparkline(id, values, color) {
+  const ctx = document.getElementById(id);
+  if (!ctx || !values.length) return;
+  if (analyticsCharts[id]) analyticsCharts[id].destroy();
+  analyticsCharts[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: values.map((_, i) => i),
+      datasets: [{ data: values, borderColor: color, borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.4 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } } }
+  });
+}
+
+function renderSparklines(data) {
+  const field = analyticsView;
+  const { values: allVals } = buildDailyTotals(data, field);
+  makeSparkline('chart-sparkline-total', allVals, '#6366f1');
+  const now = new Date();
+  const monthData = data.filter(tx => {
+    const d = new Date(tx.date || tx.created_at || tx.createdAt || 0);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const { values: monthVals } = buildDailyTotals(monthData, field);
+  makeSparkline('chart-sparkline-month', monthVals, '#6366f1');
 }
 
 // ─── INBOX ─────────────────────────────────────────────────

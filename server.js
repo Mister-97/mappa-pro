@@ -16,6 +16,7 @@ const snippetsRoutes = require('./routes/snippets');
 const scriptsRoutes = require('./routes/scripts');
 const revenueRoutes = require('./routes/revenue');
 const webhooksRoutes = require('./routes/webhooks');
+const settingsRoutes = require('./routes/settings');
 const { startTokenRefreshJob } = require('./services/tokenRefresh');
 const { startInboxPollingJob } = require('./services/inboxPoller');
 
@@ -47,6 +48,7 @@ app.use('/api/conversations', conversationsRoutes);
 app.use('/api/snippets', snippetsRoutes);
 app.use('/api/scripts', scriptsRoutes);
 app.use('/api/revenue', revenueRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
