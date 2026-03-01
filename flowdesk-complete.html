@@ -162,7 +162,7 @@
   .badge-gray { background: rgba(144,144,160,0.15); color: var(--text2); }
 
   /* ── INBOX ── */
-  #panel-inbox { flex-direction: row; padding: 0; gap: 0; overflow: hidden; }
+  #panel-inbox { flex-direction: column; padding: 0; gap: 0; overflow: hidden; }
 
   .inbox-sidebar {
     width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column;
@@ -206,6 +206,68 @@
     margin-top: 5px; flex-shrink: 0;
   }
   .conv-item.unread .conv-name { color: var(--accent); }
+
+  /* ── CREATOR TABS ── */
+  .inbox-outer { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .creator-tabs {
+    display: flex; gap: 0; background: var(--bg2); border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0; scrollbar-width: none;
+  }
+  .creator-tabs::-webkit-scrollbar { display: none; }
+  .creator-tab {
+    display: flex; align-items: center; gap: 8px; padding: 10px 18px;
+    font-size: 13px; color: var(--text2); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.15s; flex-shrink: 0;
+    background: transparent; border-top: none; border-left: none; border-right: none;
+    font-family: inherit;
+  }
+  .creator-tab:hover { color: var(--text); background: var(--bg3); }
+  .creator-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .creator-tab-avatar {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: var(--text2); overflow: hidden; flex-shrink: 0;
+  }
+  .creator-tab-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .creator-tab.active .creator-tab-avatar { color: var(--accent); }
+  .creator-tab-badge {
+    background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+  }
+
+  /* ── INBOX BODY ── */
+  .inbox-body { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
+
+  /* ── CONVERSATION TABS ── */
+  .convo-right { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-width: 0; }
+  .convo-tabs {
+    display: flex; gap: 0; background: var(--bg2); border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0; scrollbar-width: none; min-height: 0;
+  }
+  .convo-tabs:empty { display: none; }
+  .convo-tabs::-webkit-scrollbar { display: none; }
+  .convo-tab {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    font-size: 12px; color: var(--text2); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.15s; flex-shrink: 0;
+    background: transparent; border-top: none; border-left: none; border-right: none;
+    font-family: inherit; max-width: 180px;
+  }
+  .convo-tab:hover { color: var(--text); background: var(--bg3); }
+  .convo-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .convo-tab-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px;
+  }
+  .convo-tab-close {
+    font-size: 14px; line-height: 1; cursor: pointer; color: var(--text3);
+    padding: 0 2px; border-radius: 3px; background: transparent; border: none;
+    font-family: inherit;
+  }
+  .convo-tab-close:hover { color: var(--red); background: var(--bg3); }
+  .convo-tab-unread {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+  }
+  .convo-main-wrap { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
 
   .convo-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
   .convo-topbar {
@@ -708,33 +770,34 @@
 
     <!-- ── INBOX ── -->
     <div class="panel" id="panel-inbox">
-      <div class="inbox-sidebar">
-        <div class="inbox-header">
-          <h2>Inbox</h2>
-          <input class="inbox-search" id="inbox-search" placeholder="Search fans..." oninput="filterConvos()" />
-        </div>
-        <div class="acct-select-wrap">
-          <select class="acct-select" id="inbox-acct" onchange="loadInbox()">
-            <option value="">Select account...</option>
-          </select>
-        </div>
-        <div class="inbox-filters">
-          <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
-          <button class="filter-btn" onclick="setFilter(this,'unread')">Unread</button>
-          <button class="filter-btn" onclick="setFilter(this,'follow_up')">Follow-up</button>
-        </div>
-        <div class="inbox-list" id="inbox-list">
-          <div class="loading">Select an account to load inbox</div>
-        </div>
-      </div>
-      <div class="convo-main" id="convo-main">
-        <div class="convo-empty">
-          <div class="icon">💬</div>
-          <div>Select a conversation</div>
-        </div>
-      </div>
-      <!-- Fan Detail Panel -->
-      <div class="fan-detail-panel" id="fan-detail-panel">
+      <div class="inbox-outer">
+        <div class="creator-tabs" id="creator-tabs"></div>
+        <div class="inbox-body">
+          <div class="inbox-sidebar">
+            <div class="inbox-header">
+              <h2>Inbox</h2>
+              <input class="inbox-search" id="inbox-search" placeholder="Search fans..." oninput="filterConvos()" />
+            </div>
+            <div class="inbox-filters" id="inbox-filters">
+              <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+              <button class="filter-btn" onclick="setFilter(this,'unread')">Unread</button>
+              <button class="filter-btn" onclick="setFilter(this,'follow_up')">Follow-up</button>
+            </div>
+            <div class="inbox-list" id="inbox-list">
+              <div class="loading">Loading inbox...</div>
+            </div>
+          </div>
+          <div class="convo-right">
+            <div class="convo-tabs" id="convo-tabs"></div>
+            <div class="convo-main-wrap">
+              <div class="convo-main" id="convo-main">
+                <div class="convo-empty">
+                  <div class="icon">💬</div>
+                  <div>Select a conversation</div>
+                </div>
+              </div>
+              <!-- Fan Detail Panel -->
+              <div class="fan-detail-panel" id="fan-detail-panel">
         <!-- Spending behavior -->
         <div class="fdp-section">
           <div class="fdp-section-title">Spending behavior</div>
@@ -832,7 +895,11 @@
           <div class="fdp-summary-result" id="fdp-summary-result"></div>
         </div>
       </div>
-    </div>
+            </div><!-- .convo-main-wrap -->
+          </div><!-- .convo-right -->
+        </div><!-- .inbox-body -->
+      </div><!-- .inbox-outer -->
+    </div><!-- #panel-inbox -->
 
     <!-- ── ANALYTICS ── -->
     <div class="panel" id="panel-analytics">
@@ -1188,6 +1255,37 @@ const msgQueue = [];
 let queueProcessing = false;
 let tempIdCounter = 0;
 
+// ─── TABBED INBOX STATE ─────────────────────────────────
+const MAX_CONVO_TABS = 12;
+const acctState = new Map(); // accountId -> per-account state
+let activeAcctId = null;
+let inboxInitialized = false;
+let inboxListPollInterval = null;
+
+function createAcctState() {
+  return {
+    convos: [],
+    convoFilter: 'all',
+    searchText: '',
+    openTabs: [],       // [{ convoId, name, encodedName }]
+    activeTabId: null,
+    unreadCount: 0,
+    loaded: false
+  };
+}
+
+function getAcctState(id) {
+  if (!acctState.has(id)) acctState.set(id, createAcctState());
+  return acctState.get(id);
+}
+
+function syncGlobalsFromAcct() {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  inboxConvos = st.convos;
+  inboxFilter = st.convoFilter;
+}
+
 // ─── HELPERS ─────────────────────────────────────────────
 async function api(path, opts = {}) {
   const res = await fetch(API + path, {
@@ -1305,6 +1403,7 @@ async function authSubmit() {
 }
 
 function logout() {
+  stopInboxListPolling();
   token = '';
   currentUser = null;
   accounts = [];
@@ -1337,6 +1436,18 @@ function showPanel(name) {
   if (name === 'accounts') loadAccountsPanel();
   if (name === 'team') loadFullTeam();
   if (name === 'settings') loadSettings();
+  if (name === 'inbox') {
+    if (!inboxInitialized && accounts.length > 0) {
+      inboxInitialized = true;
+      populateAcctSelects();
+    } else if (activeAcctId) {
+      renderCreatorTabs();
+      renderConvoTabs();
+    }
+    startInboxListPolling();
+  } else {
+    stopInboxListPolling();
+  }
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────
@@ -1369,7 +1480,11 @@ async function loadDashboard() {
     document.getElementById('ov-team-sub').textContent = `${d.team?.total ?? 0} team member${d.team?.total === 1 ? '' : 's'}`;
 
     accounts = d.accounts?.all || [];
-    populateAcctSelects();
+    // Initialize acctState with unread counts (but don't render tabs or load inbox yet)
+    accounts.filter(a => a.is_active).forEach(a => {
+      const st = getAcctState(a.id);
+      st.unreadCount = a.unread_count || 0;
+    });
 
     // Populate per-overview widget account selectors
     const activeAccounts = accounts.filter(a => a.is_active);
@@ -1645,16 +1760,108 @@ async function saveOrg() {
 
 // ─── ACCOUNTS ─────────────────────────────────────────────
 function populateAcctSelects() {
-  populateAcctSelect('inbox-acct');
+  // Initialize acctState for each active account
+  const active = accounts.filter(a => a.is_active);
+  active.forEach(a => {
+    const st = getAcctState(a.id);
+    st.unreadCount = a.unread_count || 0;
+  });
+  renderCreatorTabs();
+  // Auto-select first account if none active
+  if (!activeAcctId && active.length > 0) {
+    switchCreatorTab(active[0].id);
+  }
 }
 
-function populateAcctSelect(selectId) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Select account...</option>' +
-    accounts.filter(a => a.is_active).map(a => `<option value="${a.id}">${a.label || a.fanvue_display_name || a.fanvue_username}</option>`).join('');
-  if (cur) sel.value = cur;
+function renderCreatorTabs() {
+  const container = document.getElementById('creator-tabs');
+  const active = accounts.filter(a => a.is_active);
+  if (active.length === 0) {
+    container.innerHTML = '<div style="padding:10px 18px;font-size:13px;color:var(--text3);">No accounts connected</div>';
+    return;
+  }
+  container.innerHTML = active.map(a => {
+    const st = getAcctState(a.id);
+    const label = a.label || a.fanvue_display_name || a.fanvue_username || '?';
+    const initials = label[0].toUpperCase();
+    const isActive = a.id === activeAcctId;
+    const badge = st.unreadCount > 0 ? `<span class="creator-tab-badge">${st.unreadCount}</span>` : '';
+    const avatar = a.avatar_url
+      ? `<div class="creator-tab-avatar"><img src="${a.avatar_url}" onerror="this.parentElement.textContent='${initials}'"></div>`
+      : `<div class="creator-tab-avatar">${initials}</div>`;
+    return `<button class="creator-tab${isActive ? ' active' : ''}" onclick="switchCreatorTab('${a.id}')">
+      ${avatar}<span>${label}</span>${badge}
+    </button>`;
+  }).join('');
+}
+
+async function switchCreatorTab(accountId) {
+  if (activeAcctId === accountId) return;
+
+  // Save current account state
+  if (activeAcctId) {
+    const prev = getAcctState(activeAcctId);
+    prev.convos = inboxConvos;
+    prev.convoFilter = inboxFilter;
+    prev.searchText = document.getElementById('inbox-search')?.value || '';
+    // Save current conversation to cache
+    if (activeConvoId) saveConvoToCache(activeConvoId);
+  }
+
+  // Clear live poll
+  if (livePollInterval) { clearInterval(livePollInterval); livePollInterval = null; }
+
+  activeAcctId = accountId;
+  const st = getAcctState(accountId);
+
+  // Restore filter buttons
+  inboxFilter = st.convoFilter;
+  const filterMap = { 'All': 'all', 'Unread': 'unread', 'Follow-up': 'follow_up' };
+  document.querySelectorAll('#inbox-filters .filter-btn').forEach(btn => {
+    btn.classList.toggle('active', filterMap[btn.textContent] === inboxFilter);
+  });
+
+  // Restore search text
+  const searchEl = document.getElementById('inbox-search');
+  if (searchEl) searchEl.value = st.searchText;
+
+  // Restore or load conversations
+  if (st.loaded) {
+    inboxConvos = st.convos;
+    renderConvoList(inboxConvos);
+  } else {
+    await loadInbox();
+  }
+
+  // Restore conversation tabs
+  activeConvoId = st.activeTabId;
+  renderConvoTabs();
+
+  // Restore active conversation tab content
+  if (st.activeTabId) {
+    const cached = convoCache.get(st.activeTabId);
+    if (cached) {
+      const main = document.getElementById('convo-main');
+      main.innerHTML = cached.mainHtml;
+      oldestMsgTimestamp = cached.oldestTs;
+      noMoreMessages = cached.noMore;
+      activeConvoData = cached.convoData;
+      activeFanId = cached.fanId;
+      const msgsBox = document.getElementById('msgs-box');
+      if (msgsBox) msgsBox.scrollTop = cached.scrollTop;
+      setupConvoListeners(st.activeTabId, msgsBox);
+      showFanDetailPanel(cached.convoData);
+    } else {
+      const tab = st.openTabs.find(t => t.convoId === st.activeTabId);
+      if (tab) openConvo(tab.convoId, tab.encodedName);
+    }
+  } else {
+    // Show empty state
+    document.getElementById('convo-main').innerHTML = '<div class="convo-empty"><div class="icon">💬</div><div>Select a conversation</div></div>';
+    document.getElementById('fan-detail-panel').classList.remove('visible');
+  }
+
+  renderCreatorTabs();
 }
 
 async function loadAccountsPanel() {
@@ -2094,15 +2301,150 @@ function renderSparklines(data) {
   makeSparkline('chart-sparkline-month', monthVals, '#6366f1');
 }
 
+// ─── CONVERSATION TABS ──────────────────────────────────────
+
+function renderConvoTabs() {
+  const container = document.getElementById('convo-tabs');
+  if (!activeAcctId) { container.innerHTML = ''; return; }
+  const st = getAcctState(activeAcctId);
+  if (!st.openTabs.length) { container.innerHTML = ''; return; }
+  container.innerHTML = st.openTabs.map(tab => {
+    const isActive = tab.convoId === st.activeTabId;
+    const convo = inboxConvos.find(c => c.id === tab.convoId);
+    const isUnread = convo?.is_unread && tab.convoId !== activeConvoId;
+    return `<button class="convo-tab${isActive ? ' active' : ''}" onclick="activateConvoTab('${tab.convoId}')">
+      ${isUnread ? '<span class="convo-tab-unread"></span>' : ''}
+      <span class="convo-tab-name">${tab.name}</span>
+      <button class="convo-tab-close" onclick="event.stopPropagation();closeConvoTab('${tab.convoId}')" title="Close">×</button>
+    </button>`;
+  }).join('');
+}
+
+function addConvoTab(convoId, name, encodedName) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  // Already open? Just return
+  if (st.openTabs.find(t => t.convoId === convoId)) return;
+  // Enforce max tabs — close oldest if exceeded
+  while (st.openTabs.length >= MAX_CONVO_TABS) {
+    const oldest = st.openTabs.shift();
+    convoCache.delete(oldest.convoId);
+  }
+  st.openTabs.push({ convoId, name, encodedName });
+}
+
+function closeConvoTab(convoId) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  const idx = st.openTabs.findIndex(t => t.convoId === convoId);
+  if (idx === -1) return;
+  st.openTabs.splice(idx, 1);
+  convoCache.delete(convoId);
+
+  // If closing the active tab, switch to adjacent
+  if (st.activeTabId === convoId) {
+    if (livePollInterval) { clearInterval(livePollInterval); livePollInterval = null; }
+    if (st.openTabs.length > 0) {
+      const newIdx = Math.min(idx, st.openTabs.length - 1);
+      const next = st.openTabs[newIdx];
+      st.activeTabId = next.convoId;
+      activeConvoId = next.convoId;
+      renderConvoTabs();
+      openConvo(next.convoId, next.encodedName);
+    } else {
+      st.activeTabId = null;
+      activeConvoId = null;
+      document.getElementById('convo-main').innerHTML = '<div class="convo-empty"><div class="icon">💬</div><div>Select a conversation</div></div>';
+      document.getElementById('fan-detail-panel').classList.remove('visible');
+      renderConvoTabs();
+    }
+  } else {
+    renderConvoTabs();
+  }
+}
+
+function activateConvoTab(convoId) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  if (st.activeTabId === convoId) return;
+
+  // Save current conversation
+  if (activeConvoId && activeConvoId !== convoId) {
+    saveConvoToCache(activeConvoId);
+  }
+
+  st.activeTabId = convoId;
+  const tab = st.openTabs.find(t => t.convoId === convoId);
+  if (tab) {
+    openConvo(convoId, tab.encodedName);
+  }
+  renderConvoTabs();
+}
+
+function openConvoFromList(convoId, encodedName) {
+  if (!activeAcctId) return;
+  const name = decodeURIComponent(encodedName);
+  addConvoTab(convoId, name, encodedName);
+  const st = getAcctState(activeAcctId);
+  st.activeTabId = convoId;
+
+  // Decrement unread count if conversation was unread
+  const convo = inboxConvos.find(c => c.id === convoId);
+  if (convo?.is_unread) {
+    convo.is_unread = false;
+    st.unreadCount = Math.max(0, st.unreadCount - 1);
+    renderCreatorTabs();
+    renderConvoList(inboxConvos);
+    // Update sidebar badge
+    const totalUnread = Array.from(acctState.values()).reduce((a, s) => a + s.unreadCount, 0);
+    const badge = document.getElementById('inbox-badge');
+    if (badge) {
+      badge.style.display = totalUnread ? 'inline' : 'none';
+      badge.textContent = totalUnread;
+    }
+  }
+
+  openConvo(convoId, encodedName);
+  renderConvoTabs();
+}
+
+// ─── INBOX LIST POLLING ────────────────────────────────────
+function startInboxListPolling() {
+  stopInboxListPolling();
+  inboxListPollInterval = setInterval(async () => {
+    const accountId = activeAcctId;
+    if (!accountId) return;
+    try {
+      const d = await api(`/api/conversations?accountId=${accountId}&filter=${inboxFilter}`);
+      if (activeAcctId !== accountId) return; // account switched mid-fetch
+      inboxConvos = d.conversations || [];
+      const st = getAcctState(accountId);
+      st.convos = inboxConvos;
+      st.unreadCount = inboxConvos.filter(c => c.is_unread).length;
+      renderCreatorTabs();
+      renderConvoList(inboxConvos);
+    } catch (e) { /* silent */ }
+  }, 20000);
+}
+
+function stopInboxListPolling() {
+  if (inboxListPollInterval) { clearInterval(inboxListPollInterval); inboxListPollInterval = null; }
+}
+
 // ─── INBOX ─────────────────────────────────────────────────
 async function loadInbox() {
-  const accountId = document.getElementById('inbox-acct').value;
+  const accountId = activeAcctId;
   if (!accountId) return;
   const listEl = document.getElementById('inbox-list');
   listEl.innerHTML = '<div class="loading">Loading conversations...</div>';
   try {
     const d = await api(`/api/conversations?accountId=${accountId}&filter=${inboxFilter}`);
     inboxConvos = d.conversations || [];
+    const st = getAcctState(accountId);
+    st.convos = inboxConvos;
+    st.loaded = true;
+    st.unreadCount = inboxConvos.filter(c => c.is_unread).length;
+    renderCreatorTabs();
     renderConvoList(inboxConvos);
   } catch (e) {
     listEl.innerHTML = `<div class="empty">${e.message}</div>`;
@@ -2124,7 +2466,7 @@ function renderConvoList(convos) {
     const fan = c.fan || {};
     const name = fan.display_name || fan.username || 'Unknown fan';
     const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    return `<div class="conv-item${c.is_unread?' unread':''}${c.id===activeConvoId?' active':''}" onclick="openConvo('${c.id}','${encodeName(name)}')">
+    return `<div class="conv-item${c.is_unread?' unread':''}${c.id===activeConvoId?' active':''}" onclick="openConvoFromList('${c.id}','${encodeName(name)}')">
       <div class="conv-avatar">${fan.avatar_url ? `<img src="${fan.avatar_url}" onerror="this.parentElement.textContent='${initials}'">` : initials}</div>
       <div class="conv-info">
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2139,11 +2481,17 @@ function renderConvoList(convos) {
 }
 
 function encodeName(name) { return encodeURIComponent(name); }
-function filterConvos() { renderConvoList(inboxConvos); }
+function filterConvos() {
+  if (activeAcctId) {
+    getAcctState(activeAcctId).searchText = document.getElementById('inbox-search')?.value || '';
+  }
+  renderConvoList(inboxConvos);
+}
 
 function setFilter(btn, filter) {
   inboxFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (activeAcctId) getAcctState(activeAcctId).convoFilter = filter;
+  document.querySelectorAll('#inbox-filters .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   loadInbox();
 }
@@ -2233,6 +2581,11 @@ function setupConvoListeners(id, msgsBox) {
 }
 
 async function openConvo(id, encodedName) {
+  // Ensure tab exists
+  const name = decodeURIComponent(encodedName);
+  addConvoTab(id, name, encodedName);
+  if (activeAcctId) getAcctState(activeAcctId).activeTabId = id;
+
   // Save current conversation to cache before switching
   if (activeConvoId && activeConvoId !== id) {
     saveConvoToCache(activeConvoId);
@@ -2244,7 +2597,6 @@ async function openConvo(id, encodedName) {
   activeConvoId = id;
   loadingOlder = false;
 
-  const name = decodeURIComponent(encodedName);
   const main = document.getElementById('convo-main');
 
   // Update active state in sidebar
@@ -2265,6 +2617,7 @@ async function openConvo(id, encodedName) {
     if (msgsBox) msgsBox.scrollTop = cached.scrollTop;
     setupConvoListeners(id, msgsBox);
     showFanDetailPanel(cached.convoData);
+    renderConvoTabs();
     return;
   }
 
@@ -2308,6 +2661,7 @@ async function openConvo(id, encodedName) {
   } catch (e) {
     main.querySelector('#msgs-box').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
   }
+  renderConvoTabs();
 }
 
 // ─── FAN DETAIL PANEL ─────────────────────────────────────

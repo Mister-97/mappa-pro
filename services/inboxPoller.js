@@ -4,11 +4,11 @@ const fanvueApi = require('./fanvueApi');
 const { v4: uuidv4 } = require('uuid');
 
 /**
- * Poll Fanvue inbox every 60 seconds for all active accounts.
+ * Poll Fanvue inbox every 15 seconds for all active accounts.
  * Syncs new conversations into conversations + fans tables.
  */
 function startInboxPollingJob() {
-  cron.schedule('*/60 * * * * *', async () => {
+  cron.schedule('*/15 * * * * *', async () => {
     try {
       const { data: accounts } = await supabase
         .from('connected_accounts')
@@ -27,7 +27,7 @@ function startInboxPollingJob() {
     }
   });
 
-  console.log('[InboxPoller] Started — polling every 60 seconds');
+  console.log('[InboxPoller] Started — polling every 15 seconds');
 }
 
 async function pollAccount(account) {
