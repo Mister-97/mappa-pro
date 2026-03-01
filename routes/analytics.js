@@ -16,18 +16,6 @@ router.use((req, res, next) => {
 const toDollars = (cents) => (cents || 0) / 100;
 
 /**
- * Return midnight UTC of N calendar days ago.
- * Fanvue counts periods from the start of the calendar day, not rolling 24h windows.
- * Using midnight UTC ensures we capture transactions from the full start day.
- */
-function midnightAgo(n) {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - n);
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-/**
  * Parse period → { startDate, endDate } as ISO timestamp strings.
  * Fanvue API requires full ISO-8601 timestamps (date-only strings return 400).
  * Supported: today, yesterday, 7d, 14d, 30d, month, year, all
@@ -39,37 +27,37 @@ function parsePeriod(period = '30d') {
   switch (period) {
     case 'today': {
       const start = new Date(now);
-      start.setUTCHours(0, 0, 0, 0);
+      start.setHours(0, 0, 0, 0);
       return { startDate: start.toISOString(), endDate };
     }
     case 'yesterday': {
       const start = new Date(now);
-      start.setUTCDate(start.getUTCDate() - 1);
-      start.setUTCHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
       const end = new Date(now);
-      end.setUTCHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
       return { startDate: start.toISOString(), endDate: end.toISOString() };
     }
     case '7d':
-      return { startDate: midnightAgo(7), endDate };
+      return { startDate: new Date(Date.now() - 7 * 86400000).toISOString(), endDate };
     case '14d':
-      return { startDate: midnightAgo(14), endDate };
+      return { startDate: new Date(Date.now() - 14 * 86400000).toISOString(), endDate };
     case '30d':
-      return { startDate: midnightAgo(30), endDate };
+      return { startDate: new Date(Date.now() - 30 * 86400000).toISOString(), endDate };
     case 'month': {
-      const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
       return { startDate: start.toISOString(), endDate };
     }
     case 'year': {
-      const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+      const start = new Date(now.getFullYear(), 0, 1);
       return { startDate: start.toISOString(), endDate };
     }
     case 'all':
       // 2-year lookback covers any Fanvue account history
-      return { startDate: midnightAgo(730), endDate };
+      return { startDate: new Date(Date.now() - 730 * 86400000).toISOString(), endDate };
     default: {
       const days = parseInt(period) || 30;
-      return { startDate: midnightAgo(days), endDate };
+      return { startDate: new Date(Date.now() - days * 86400000).toISOString(), endDate };
     }
   }
 }
@@ -285,10 +273,11 @@ router.get('/:accountId/top-spenders', authenticate, async (req, res, next) => {
       ...fan,
       gross: toDollars(fan.gross),
       net: toDollars(fan.net),
-      fanId: fan.user?.id || fan.fanId,
-      username: fan.user?.username || fan.username,
-      display_name: fan.user?.display_name || fan.display_name,
-      avatar_url: fan.user?.avatar_url || fan.avatar_url
+      fanId: fan.user?.uuid || fan.fanId,
+      username: fan.user?.handle || fan.username,
+      display_name: fan.user?.displayName || fan.display_name,
+      avatar_url: fan.user?.avatarUrl || fan.avatar_url,
+      nickname: fan.user?.nickname || null
     }));
 
     res.json({ data, pagination: result?.pagination || {}, page });
