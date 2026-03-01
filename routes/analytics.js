@@ -19,29 +19,114 @@ router.use((req, res, next) => {
 const toDollars = (cents) => (cents || 0) / 100;
 
 /**
- * Helper: parse period string into startDate/endDate ISO 8601 datetime strings
- * Fanvue requires full datetime format e.g. 2024-10-20T00:00:00Z (not YYYY-MM-DD)
- * Accepts: '7d', '30d', '90d', 'all'
+ * Helper: parse period into { startDate, endDate } — always returns real ISO dates.
+ * Fanvue Insights API has a ~30-day max date range per request, so callers that need
+ * longer ranges must use fetchEarningsChunked / fetchSubscribersChunked below.
  */
 function parsePeriod(period = '30d') {
-  if (period === 'all') return {};
+  const endDate = new Date().toISOString();
+  if (period === 'all') {
+    // 18 months back covers typical account history; chunks handle the range limit
+    const startDate = new Date(Date.now() - 18 * 30 * 24 * 60 * 60 * 1000).toISOString();
+    return { startDate, endDate };
+  }
   const days = parseInt(period) || 30;
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-  const endDate = new Date().toISOString();
   return { startDate, endDate };
+}
+
+/**
+ * Split [startDate, endDate] into chunks of at most chunkDays days.
+ * Fanvue's Insights API rejects date ranges longer than ~30 days.
+ */
+function buildChunks(startDate, endDate, chunkDays = 28) {
+  const chunks = [];
+  let cursor = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
+  const step = chunkDays * 24 * 60 * 60 * 1000;
+  while (cursor < end) {
+    const chunkEnd = Math.min(cursor + step, end);
+    chunks.push({
+      startDate: new Date(cursor).toISOString(),
+      endDate: new Date(chunkEnd).toISOString()
+    });
+    cursor = chunkEnd;
+  }
+  return chunks;
+}
+
+/**
+ * Fetch ALL earnings transactions for [startDate, endDate], transparently chunking
+ * into 28-day windows and handling cursor pagination within each window.
+ * Returns raw Fanvue data (cents, not converted).
+ */
+async function fetchEarningsChunked(account, startDate, endDate) {
+  const chunks = buildChunks(startDate, endDate);
+
+  // Fetch all chunks in parallel to keep latency low
+  const chunkResults = await Promise.all(
+    chunks.map(async (chunk) => {
+      const data = [];
+      let nextCursor = null;
+      let page = 0;
+      do {
+        try {
+          const result = await fanvueApi.getInsightsEarnings(account, {
+            startDate: chunk.startDate,
+            endDate: chunk.endDate,
+            cursor: nextCursor || undefined,
+            limit: 100
+          });
+          data.push(...(result?.data || []));
+          nextCursor = result?.nextCursor || null;
+        } catch (e) {
+          console.error(`[Analytics] earnings chunk ${chunk.startDate} error:`, e.message);
+          break;
+        }
+        page++;
+        if (page > 20) break; // safety
+      } while (nextCursor);
+      return data;
+    })
+  );
+
+  return chunkResults.flat();
+}
+
+/**
+ * Fetch subscriber daily history for [startDate, endDate], chunked into 28-day windows.
+ * Returns combined daily data array.
+ */
+async function fetchSubscribersChunked(account, startDate, endDate) {
+  const chunks = buildChunks(startDate, endDate);
+
+  const chunkResults = await Promise.all(
+    chunks.map(async (chunk) => {
+      try {
+        const result = await fanvueApi.getInsightsSubscribers(account, {
+          startDate: chunk.startDate,
+          endDate: chunk.endDate
+        });
+        return result?.data || [];
+      } catch (e) {
+        console.error(`[Analytics] subscribers chunk ${chunk.startDate} error:`, e.message);
+        return [];
+      }
+    })
+  );
+
+  return chunkResults.flat();
 }
 
 /**
  * GET /api/analytics/overview
  * Aggregate analytics across ALL connected accounts in the org.
- * Uses Insights API (getInsightsEarnings + getInsightsSubscribers + getStats)
  */
 router.get('/overview', authenticate, async (req, res, next) => {
   try {
     const { period = '30d' } = req.query;
     const { startDate, endDate } = parsePeriod(period);
 
-    // Get all active accounts
     const { data: accounts, error } = await supabase
       .from('connected_accounts')
       .select('*')
@@ -50,44 +135,27 @@ router.get('/overview', authenticate, async (req, res, next) => {
 
     if (error) throw error;
     if (!accounts || accounts.length === 0) {
-      return res.json({ accounts: [], totals: { earnings: 0, subscribers: 0, newSubscribers: 0, messages: 0 } });
+      return res.json({ accounts: [], totals: { earnings: 0, subscribers: 0, newSubscribers: 0 } });
     }
 
     const accountsData = await Promise.all(
       accounts.map(async (account) => {
-        const [statsResult, earningsResult, subscribersResult] = await Promise.allSettled([
+        const [statsResult, earningsRaw, subHistory] = await Promise.allSettled([
           fanvueApi.getStats(account),
-          fanvueApi.getInsightsEarnings(account, { startDate, endDate, limit: 100 }),
-          fanvueApi.getInsightsSubscribers(account, { startDate, endDate })
+          fetchEarningsChunked(account, startDate, endDate),
+          fetchSubscribersChunked(account, startDate, endDate)
         ]);
+
+        if (statsResult.status === 'rejected')
+          console.error('[Analytics] getStats error:', statsResult.reason?.message);
 
         const stats = statsResult.status === 'fulfilled' ? statsResult.value : null;
 
-        // Log any errors to help debug
-        if (statsResult.status === 'rejected') console.error('[Analytics] getStats error:', statsResult.reason?.message);
-        if (earningsResult.status === 'rejected') console.error('[Analytics] getInsightsEarnings error:', earningsResult.reason?.message);
-        if (subscribersResult.status === 'rejected') console.error('[Analytics] getInsightsSubscribers error:', subscribersResult.reason?.message);
+        const earningsData = earningsRaw.status === 'fulfilled' ? earningsRaw.value : [];
+        const earningsTotal = earningsData.reduce((sum, tx) => sum + toDollars(tx.net || tx.gross || 0), 0);
 
-        // Sum earnings from insights data array
-        let earningsTotal = 0;
-        if (earningsResult.status === 'fulfilled') {
-          const earningsData = earningsResult.value?.data || [];
-          earningsTotal = earningsData.reduce((sum, tx) => sum + toDollars(tx.net || tx.gross || 0), 0);
-        }
-
-        // Sum new/cancelled subscribers from daily history
-        // Response shape: { date, total (cumulative net), newSubscribersCount, cancelledSubscribersCount }
-        let subscriberCount = stats?.subscriberCount || 0;
-        let newSubscribers = 0;
-        if (subscribersResult.status === 'fulfilled') {
-          const subHistory = subscribersResult.value?.data || [];
-          if (subHistory.length > 0) {
-            // total = cumulative net change from query start — last entry is the most recent
-            const latestTotal = subHistory[subHistory.length - 1]?.total ?? 0;
-            subscriberCount = stats?.subscriberCount || 0; // stats has the live absolute count
-            newSubscribers = subHistory.reduce((sum, d) => sum + (d.newSubscribersCount || 0), 0);
-          }
-        }
+        const subData = subHistory.status === 'fulfilled' ? subHistory.value : [];
+        const newSubscribers = subData.reduce((sum, d) => sum + (d.newSubscribersCount || 0), 0);
 
         return {
           accountId: account.id,
@@ -95,7 +163,7 @@ router.get('/overview', authenticate, async (req, res, next) => {
           fanvue_username: account.fanvue_username,
           avatar_url: account.avatar_url,
           earnings: earningsTotal,
-          subscriberCount,
+          subscriberCount: stats?.subscriberCount || 0,
           newSubscribers,
           followerCount: stats?.followerCount || 0,
           error: statsResult.status === 'rejected' ? statsResult.reason?.message : null
@@ -118,12 +186,12 @@ router.get('/overview', authenticate, async (req, res, next) => {
 
 /**
  * GET /api/analytics/:accountId/earnings
- * Cursor-paginated earnings for a single account using Insights API.
- * Query params: period (7d/30d/90d/all), cursor, source
+ * All earnings for a single account, chunked across the full period.
+ * Query params: period (7d/30d/90d/all), source
  */
 router.get('/:accountId/earnings', authenticate, async (req, res, next) => {
   try {
-    const { period = '30d', cursor, source } = req.query;
+    const { period = '30d', source } = req.query;
     const { startDate, endDate } = parsePeriod(period);
 
     const { data: account, error } = await supabase
@@ -133,36 +201,30 @@ router.get('/:accountId/earnings', authenticate, async (req, res, next) => {
       .eq('organization_id', req.user.organization_id)
       .single();
 
-    if (error || !account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
+    if (error || !account) return res.status(404).json({ error: 'Account not found' });
 
-    const result = await fanvueApi.getInsightsEarnings(account, {
-      cursor,
-      source,
-      startDate,
-      endDate,
-      limit: 50
-    });
+    // Use chunked fetcher so 90d and all-time work correctly
+    const raw = await fetchEarningsChunked(account, startDate, endDate);
 
-    // Normalise cents → dollars
-    const data = (result?.data || []).map(tx => ({
-      ...tx,
-      gross: toDollars(tx.gross),
-      net: toDollars(tx.net),
-      fee: toDollars(tx.fee)
-    }));
+    // Normalise cents → dollars, optionally filter by source
+    const data = raw
+      .filter(tx => !source || source === 'all' || tx.source === source)
+      .map(tx => ({
+        ...tx,
+        gross: toDollars(tx.gross),
+        net: toDollars(tx.net),
+        fee: toDollars(tx.fee)
+      }));
 
     const total = data.reduce((sum, tx) => sum + (tx.net || 0), 0);
 
-    // Breakdown by source
     const breakdown = data.reduce((acc, tx) => {
       const src = tx.source || 'other';
       acc[src] = (acc[src] || 0) + (tx.net || 0);
       return acc;
     }, {});
 
-    res.json({ data, total, breakdown, nextCursor: result?.nextCursor || null, period });
+    res.json({ data, total, breakdown, period });
   } catch (err) {
     next(err);
   }
@@ -184,19 +246,14 @@ router.get('/:accountId/top-spenders', authenticate, async (req, res, next) => {
       .eq('organization_id', req.user.organization_id)
       .single();
 
-    if (error || !account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
+    if (error || !account) return res.status(404).json({ error: 'Account not found' });
 
     const result = await fanvueApi.getTopSpenders(account, { page: parseInt(page), size: parseInt(size) });
 
-    // Normalise cents → dollars, and flatten fan.user fields to the top level
-    // Fanvue API returns: { gross, net, messages, user: { id, username, display_name, avatar_url, ... } }
     const data = (result?.data || []).map(fan => ({
       ...fan,
       gross: toDollars(fan.gross),
       net: toDollars(fan.net),
-      // Hoist user fields so frontend can access fan.username / fan.display_name directly
       fanId: fan.user?.id || fan.fanId,
       username: fan.user?.username || fan.username,
       display_name: fan.user?.display_name || fan.display_name,
@@ -211,9 +268,8 @@ router.get('/:accountId/top-spenders', authenticate, async (req, res, next) => {
 
 /**
  * GET /api/analytics/:accountId/subscribers
- * Daily subscriber count history for a single account.
+ * Daily subscriber count history, chunked across the full period.
  * Query params: period (7d/30d/90d/all)
- * Response shape per day: { date, total (cumulative net), newSubscribersCount, cancelledSubscribersCount }
  */
 router.get('/:accountId/subscribers', authenticate, async (req, res, next) => {
   try {
@@ -227,17 +283,12 @@ router.get('/:accountId/subscribers', authenticate, async (req, res, next) => {
       .eq('organization_id', req.user.organization_id)
       .single();
 
-    if (error || !account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
+    if (error || !account) return res.status(404).json({ error: 'Account not found' });
 
-    const result = await fanvueApi.getInsightsSubscribers(account, { startDate, endDate });
-    const data = result?.data || [];
+    const data = await fetchSubscribersChunked(account, startDate, endDate);
 
-    // Sum new subscribers across all days in the period
     const newSubscribers = data.reduce((sum, d) => sum + (d.newSubscribersCount || 0), 0);
     const cancelledSubscribers = data.reduce((sum, d) => sum + (d.cancelledSubscribersCount || 0), 0);
-    // total on the latest entry = cumulative net change from startDate
     const netChange = data.length > 0 ? (data[data.length - 1]?.total || 0) : 0;
 
     res.json({ data, newSubscribers, cancelledSubscribers, netChange, period });
@@ -263,9 +314,7 @@ router.get('/:accountId/spending', authenticate, async (req, res, next) => {
       .eq('organization_id', req.user.organization_id)
       .single();
 
-    if (error || !account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
+    if (error || !account) return res.status(404).json({ error: 'Account not found' });
 
     const result = await fanvueApi.getInsightsSpending(account, { cursor, startDate, endDate, limit: 50 });
 
