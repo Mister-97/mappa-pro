@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const supabase = require('../config/supabase');
 const { encrypt } = require('../utils/encryption');
@@ -17,11 +18,32 @@ const pkceStore = new Map();
 /**
  * GET /api/oauth/connect
  * Initiate Fanvue OAuth flow for a creator account.
- * No auth required — works without login for now.
- * Query param: ?label=ModelName (optional display name)
+ * Resolves user/org from JWT token query param, falls back to AUTH_BYPASS env vars.
+ * Query params: ?label=ModelName&token=JWT
  */
-router.get('/connect', (req, res) => {
-  const { label } = req.query;
+router.get('/connect', async (req, res) => {
+  const { label, token } = req.query;
+
+  // Resolve user identity from JWT token or AUTH_BYPASS defaults
+  let userId = process.env.DEFAULT_USER_ID || 'dev-user';
+  let organizationId = process.env.DEFAULT_ORG_ID || 'dev-org';
+
+  if (token && process.env.JWT_SECRET) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const { data: user } = await supabase
+        .from('users')
+        .select('id, organization_id')
+        .eq('id', decoded.userId)
+        .single();
+      if (user) {
+        userId = user.id;
+        organizationId = user.organization_id;
+      }
+    } catch (e) {
+      // fall through to defaults
+    }
+  }
 
   const codeVerifier = crypto.randomBytes(32).toString('base64url');
   const codeChallenge = crypto
@@ -33,9 +55,9 @@ router.get('/connect', (req, res) => {
 
   pkceStore.set(state, {
     codeVerifier,
-    userId: process.env.DEFAULT_USER_ID || 'dev-user',
-    organizationId: process.env.DEFAULT_ORG_ID || 'dev-org',
-    label: label || 'mumu',
+    userId,
+    organizationId,
+    label: (label || '').trim() || 'New Account',
     expiresAt: Date.now() + 10 * 60 * 1000
   });
 
@@ -49,7 +71,8 @@ router.get('/connect', (req, res) => {
     code_challenge_method: 'S256'
   });
 
-  res.json({ authUrl: `${FANVUE_AUTH_URL}?${params.toString()}` });
+  // Redirect directly to Fanvue — no JSON, no copy-pasting
+  res.redirect(`${FANVUE_AUTH_URL}?${params.toString()}`);
 });
 
 /**
