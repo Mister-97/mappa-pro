@@ -2,6 +2,7 @@ const express = require('express');
 const supabase = require('../config/supabase');
 const { authenticate } = require('../middleware/auth');
 const fanvueApi = require('../services/fanvueApi');
+const { withRetry } = require('../utils/rateLimitRetry');
 
 const router = express.Router();
 
@@ -56,7 +57,7 @@ async function fetchEarnings(account, startDate, endDate) {
 
   if (totalDays <= 31) {
     try {
-      const r = await fanvueApi.getInsightsEarnings(account, { startDate, endDate, limit: 100 });
+      const r = await withRetry(() => fanvueApi.getInsightsEarnings(account, { startDate, endDate, limit: 100 }));
       return r?.data || [];
     } catch (e) {
       console.error('[Analytics] fetchEarnings error:', e.message);
@@ -71,12 +72,12 @@ async function fetchEarnings(account, startDate, endDate) {
     let pages = 0;
     do {
       try {
-        const r = await fanvueApi.getInsightsEarnings(account, {
+        const r = await withRetry(() => fanvueApi.getInsightsEarnings(account, {
           startDate: chunk.startDate,
           endDate: chunk.endDate,
           cursor: cursor || undefined,
           limit: 100
-        });
+        }));
         allData.push(...(r?.data || []));
         cursor = r?.nextCursor || null;
       } catch (e) {
@@ -96,7 +97,7 @@ async function fetchSubscribers(account, startDate, endDate) {
 
   if (totalDays <= 31) {
     try {
-      const r = await fanvueApi.getInsightsSubscribers(account, { startDate, endDate });
+      const r = await withRetry(() => fanvueApi.getInsightsSubscribers(account, { startDate, endDate }));
       return r?.data || [];
     } catch (e) {
       console.error('[Analytics] fetchSubscribers error:', e.message);
@@ -107,10 +108,10 @@ async function fetchSubscribers(account, startDate, endDate) {
   const allData = [];
   for (const chunk of buildChunks(startDate, endDate)) {
     try {
-      const r = await fanvueApi.getInsightsSubscribers(account, {
+      const r = await withRetry(() => fanvueApi.getInsightsSubscribers(account, {
         startDate: chunk.startDate,
         endDate: chunk.endDate
-      });
+      }));
       allData.push(...(r?.data || []));
     } catch (e) {
       console.error(`[Analytics] sub chunk ${chunk.startDate} error:`, e.message);
