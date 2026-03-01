@@ -330,6 +330,24 @@ async function getChatMedia(account, userUuid, { cursor = null, mediaType = null
   return fanvueRequest(account, 'GET', `/chats/${userUuid}/media`, null, params);
 }
 
+/**
+ * Get chat templates (paginated, optionally filtered by folder)
+ * GET /chats/templates
+ */
+async function getTemplates(account, { page = 1, size = 50, folderName = null } = {}) {
+  const params = { page, size };
+  if (folderName) params.folderName = folderName;
+  return fanvueRequest(account, 'GET', '/chats/templates', null, params);
+}
+
+/**
+ * Get a single chat template by UUID
+ * GET /chats/templates/{templateUuid}
+ */
+async function getTemplate(account, templateUuid) {
+  return fanvueRequest(account, 'GET', `/chats/templates/${templateUuid}`);
+}
+
 module.exports = {
   getProfile,
   getStats,
@@ -353,6 +371,8 @@ module.exports = {
   getBatchStatuses,
   deleteMessage,
   getChatMedia,
+  getTemplates,
+  getTemplate,
   getValidToken,
   refreshToken
 };

@@ -14,6 +14,7 @@ const fansRoutes = require('./routes/fans');
 const conversationsRoutes = require('./routes/conversations');
 const snippetsRoutes = require('./routes/snippets');
 const scriptsRoutes = require('./routes/scripts');
+const templatesRoutes = require('./routes/templates');
 const revenueRoutes = require('./routes/revenue');
 const webhooksRoutes = require('./routes/webhooks');
 const settingsRoutes = require('./routes/settings');
@@ -47,6 +48,7 @@ app.use('/api/fans', fansRoutes);
 app.use('/api/conversations', conversationsRoutes);
 app.use('/api/snippets', snippetsRoutes);
 app.use('/api/scripts', scriptsRoutes);
+app.use('/api/templates', templatesRoutes);
 app.use('/api/revenue', revenueRoutes);
 app.use('/api/settings', settingsRoutes);
 

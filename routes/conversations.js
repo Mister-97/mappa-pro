@@ -294,10 +294,10 @@ router.patch('/:conversationId/nickname', authenticate, async (req, res, next) =
  */
 router.post('/:conversationId/messages', authenticate, async (req, res, next) => {
   try {
-    const { content, mediaUrls = [], isPpv = false, ppvPrice, scriptRunId } = req.body;
+    const { content, mediaUrls = [], isPpv = false, ppvPrice, scriptRunId, templateUuid, mediaUuids } = req.body;
 
-    if (!content && mediaUrls.length === 0) {
-      return res.status(400).json({ error: 'content or media required' });
+    if (!content && mediaUrls.length === 0 && !templateUuid) {
+      return res.status(400).json({ error: 'content, media, or template required' });
     }
 
     const { data: conv, error: convError } = await supabase
@@ -318,8 +318,9 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
         fanUserUuid,
         {
           text: content || null,
-          mediaUuids: [],
-          price: isPpv && ppvPrice ? ppvPrice : null
+          mediaUuids: mediaUuids || [],
+          price: ppvPrice != null && ppvPrice > 0 ? ppvPrice : null,
+          templateUuid: templateUuid || null
         }
       );
       // API spec: 201 response returns { messageUuid: "..." }

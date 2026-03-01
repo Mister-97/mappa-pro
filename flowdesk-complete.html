@@ -308,6 +308,106 @@
     align-self: flex-end;
   }
   .btn-send:hover { background: var(--accent2); }
+  .btn-scripts {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; color: var(--text2); font-size: 16px; cursor: pointer;
+    transition: all 0.15s; align-self: flex-end; line-height: 1;
+  }
+  .btn-scripts:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-clear {
+    background: none; border: none; color: var(--text3); font-size: 16px;
+    cursor: pointer; padding: 4px 8px; align-self: flex-end; line-height: 1;
+  }
+  .btn-clear:hover { color: var(--red); }
+  .template-preview {
+    padding: 8px 20px; border-bottom: 1px solid var(--border); display: flex;
+    align-items: center; gap: 10px; background: var(--bg2);
+  }
+  .template-preview .tmpl-thumbs { display: flex; gap: 6px; flex: 1; overflow-x: auto; }
+  .template-preview .tmpl-thumb {
+    width: 48px; height: 48px; border-radius: 6px; object-fit: cover; cursor: pointer;
+    border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .template-preview .tmpl-price-wrap {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  .template-preview .tmpl-price-input {
+    width: 70px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 8px; color: var(--text); font-size: 13px; text-align: right;
+  }
+  .scripts-modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 5000;
+    background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+  }
+  .scripts-modal-inner {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+    width: 560px; max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .scripts-modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .scripts-modal-header h3 { font-size: 15px; font-weight: 600; }
+  .scripts-modal-close {
+    background: none; border: none; color: var(--text3); font-size: 20px;
+    cursor: pointer; line-height: 1;
+  }
+  .scripts-modal-close:hover { color: var(--text); }
+  .scripts-modal-folders {
+    padding: 10px 20px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; overflow-x: auto;
+  }
+  .scripts-modal-folders .folder-btn {
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
+    white-space: nowrap;
+  }
+  .scripts-modal-folders .folder-btn.active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .scripts-modal-body {
+    flex: 1; overflow-y: auto; padding: 12px;
+  }
+  .template-card {
+    padding: 14px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); margin-bottom: 8px; transition: all 0.15s;
+  }
+  .template-card:hover { border-color: var(--accent); background: var(--bg3); }
+  .template-card-text {
+    font-size: 13px; color: var(--text); line-height: 1.5;
+    max-height: 60px; overflow: hidden; margin-bottom: 8px;
+  }
+  .template-card-footer { display: flex; align-items: center; gap: 10px; }
+  .template-card-thumbs { display: flex; gap: 4px; flex: 1; }
+  .template-card-thumb {
+    width: 36px; height: 36px; border-radius: 4px; object-fit: cover;
+    border: 1px solid var(--border);
+  }
+  .template-card-media-badge {
+    font-size: 11px; color: var(--text3); background: var(--bg3);
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .template-price-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  }
+  .template-price-badge.paid { background: rgba(168,85,247,0.15); color: var(--accent); }
+  .template-price-badge.free { background: rgba(34,197,94,0.15); color: var(--green); }
+  .scripts-modal-footer {
+    padding: 12px 20px; border-top: 1px solid var(--border); text-align: center;
+  }
+  .btn-load-more {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 20px; color: var(--text2); font-size: 13px; cursor: pointer;
+  }
+  .btn-load-more:hover { border-color: var(--accent); color: var(--accent); }
+  .lightbox {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 6000;
+    background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+  .lightbox video { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
   .convo-empty {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     color: var(--text3); gap: 10px;
@@ -1273,6 +1373,10 @@ let activeNoteFilter = 'all';
 const msgQueue = [];
 let queueProcessing = false;
 let tempIdCounter = 0;
+let selectedTemplateUuid = null;
+let selectedTemplatePrice = null; // in cents
+let selectedMediaUuids = [];
+let templatesCache = null; // { data, folders, hasMore, page }
 
 // ─── TABBED INBOX STATE ─────────────────────────────────
 const MAX_CONVO_TABS = 12;
@@ -2650,8 +2754,11 @@ async function openConvo(id, encodedName) {
       <button class="btn-sm" onclick="openConvo('${id}','${encodedName}')">↻</button>
     </div>
     <div class="convo-msgs" id="msgs-box"><div class="loading">Loading messages...</div></div>
+    <div id="template-preview" class="template-preview" style="display:none"></div>
     <div class="convo-input-wrap">
+      <button class="btn-scripts" onclick="openScriptsModal()" title="Templates">📋</button>
       <textarea class="convo-input" id="reply-input" placeholder="Type a message..." rows="2" onkeydown="handleMsgKey(event,'${id}')"></textarea>
+      <button class="btn-clear" id="btn-clear-template" onclick="clearCompose()" title="Clear template" style="display:none">✕</button>
       <button class="btn-send" onclick="sendMsg('${id}')">Send</button>
     </div>`;
   try {
@@ -2887,11 +2994,21 @@ function generateChatSummary() {
 function sendMsg(convoId) {
   const input = document.getElementById('reply-input');
   const content = input.value.trim();
-  if (!content) return;
+  if (!content && !selectedTemplateUuid) return;
   input.value = '';
   const tempId = 'temp-' + tempIdCounter++;
-  appendOptimisticMsg(tempId, content);
-  msgQueue.push({ tempId, convoId, content, status: 'queued' });
+  const displayText = content || (selectedTemplateUuid ? '[Template]' : '');
+  appendOptimisticMsg(tempId, displayText);
+  const queueItem = { tempId, convoId, content, status: 'queued' };
+  if (selectedTemplateUuid) {
+    queueItem.templateUuid = selectedTemplateUuid;
+    queueItem.mediaUuids = selectedMediaUuids;
+    const priceInput = document.getElementById('tmpl-price');
+    if (priceInput) selectedTemplatePrice = Math.round(Math.max(0, parseFloat(priceInput.value || 0)) * 100);
+    if (selectedTemplatePrice > 0) queueItem.ppvPrice = selectedTemplatePrice;
+  }
+  msgQueue.push(queueItem);
+  clearCompose();
   processQueue();
 }
 
@@ -2903,12 +3020,16 @@ async function processQueue() {
     item.status = 'sending';
     updateMsgStatus(item.tempId, 'sending');
     try {
-      await api(`/api/conversations/${item.convoId}/messages`, { method: 'POST', body: { content: item.content } });
+      const body = { content: item.content };
+      if (item.templateUuid) body.templateUuid = item.templateUuid;
+      if (item.mediaUuids && item.mediaUuids.length) body.mediaUuids = item.mediaUuids;
+      if (item.ppvPrice) { body.isPpv = true; body.ppvPrice = item.ppvPrice; }
+      await api(`/api/conversations/${item.convoId}/messages`, { method: 'POST', body });
       updateMsgStatus(item.tempId, 'sent');
       // Update conversation preview in sidebar
       const convo = inboxConvos.find(c => c.id === item.convoId);
       if (convo) {
-        convo.last_message_preview = item.content.substring(0, 100);
+        convo.last_message_preview = (item.content || (item.templateUuid ? '[Template]' : '')).substring(0, 100);
         convo.last_message_at = new Date().toISOString();
         convo.last_message_from = 'model';
         renderConvoList(inboxConvos);
@@ -2965,7 +3086,194 @@ function handleMsgKey(e, id) {
 }
 
 function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(s) { return escHtml(String(s || '')); }
+
+// ─── FANVUE TEMPLATES (Scripts Modal) ─────────────────────
+
+async function openScriptsModal() {
+  if (!activeAcctId) { toast('Select an account first', 'error'); return; }
+  // Create modal
+  const overlay = document.createElement('div');
+  overlay.className = 'scripts-modal';
+  overlay.id = 'scripts-modal';
+  overlay.onclick = (e) => { if (e.target === overlay) closeScriptsModal(); };
+  overlay.innerHTML = `
+    <div class="scripts-modal-inner">
+      <div class="scripts-modal-header">
+        <h3>Templates</h3>
+        <button class="scripts-modal-close" onclick="closeScriptsModal()">✕</button>
+      </div>
+      <div class="scripts-modal-folders" id="tmpl-folders" style="display:none"></div>
+      <div class="scripts-modal-body" id="tmpl-list">
+        <div class="loading">Loading templates...</div>
+      </div>
+      <div class="scripts-modal-footer" id="tmpl-footer" style="display:none">
+        <button class="btn-load-more" onclick="loadMoreTemplates()">Load more</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.addEventListener('keydown', scriptsModalEscHandler);
+  templatesCache = { data: [], folders: new Set(), hasMore: false, page: 0, activeFolder: null };
+  await loadMoreTemplates();
+}
+
+function scriptsModalEscHandler(e) {
+  if (e.key === 'Escape') closeScriptsModal();
+}
+
+function closeScriptsModal() {
+  const m = document.getElementById('scripts-modal');
+  if (m) m.remove();
+  document.removeEventListener('keydown', scriptsModalEscHandler);
+}
+
+async function loadMoreTemplates() {
+  const tc = templatesCache;
+  tc.page++;
+  try {
+    let url = `/api/templates?accountId=${activeAcctId}&page=${tc.page}&size=50`;
+    if (tc.activeFolder) url += `&folderName=${encodeURIComponent(tc.activeFolder)}`;
+    const resp = await api(url);
+    const items = resp.data || resp || [];
+    tc.data = tc.data.concat(items);
+    tc.hasMore = resp.pagination ? (tc.page < resp.pagination.totalPages) : items.length === 50;
+    // Collect folders
+    items.forEach(t => { if (t.folderName) tc.folders.add(t.folderName); });
+    renderTemplatesList();
+    renderTemplateFolders();
+  } catch (e) {
+    document.getElementById('tmpl-list').innerHTML = `<div class="empty">Error loading templates: ${e.message}</div>`;
+  }
+}
+
+function renderTemplateFolders() {
+  const el = document.getElementById('tmpl-folders');
+  const tc = templatesCache;
+  if (tc.folders.size === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const folders = ['All', ...tc.folders];
+  el.innerHTML = folders.map(f => {
+    const isActive = (f === 'All' && !tc.activeFolder) || f === tc.activeFolder;
+    return `<button class="folder-btn ${isActive ? 'active' : ''}" onclick="filterTemplateFolder('${f === 'All' ? '' : escHtml(f)}')">${escHtml(f)}</button>`;
+  }).join('');
+}
+
+async function filterTemplateFolder(folder) {
+  templatesCache.data = [];
+  templatesCache.page = 0;
+  templatesCache.activeFolder = folder || null;
+  document.getElementById('tmpl-list').innerHTML = '<div class="loading">Loading...</div>';
+  await loadMoreTemplates();
+}
+
+function renderTemplatesList() {
+  const tc = templatesCache;
+  const list = document.getElementById('tmpl-list');
+  if (!tc.data.length) {
+    list.innerHTML = '<div class="empty">No templates found</div>';
+    document.getElementById('tmpl-footer').style.display = 'none';
+    return;
+  }
+  list.innerHTML = tc.data.map((t, i) => {
+    const text = (t.text || '').substring(0, 120) + ((t.text || '').length > 120 ? '...' : '');
+    const price = t.price ? t.price : 0;
+    const priceFmt = price > 0 ? `$${(price / 100).toFixed(2)}` : 'Free';
+    const priceClass = price > 0 ? 'paid' : 'free';
+    const mediaCount = (t.mediaUuids || []).length;
+    let mediaPart = '';
+    if (t.media && t.media.length > 0) {
+      mediaPart = t.media.slice(0, 4).map(m =>
+        `<img class="template-card-thumb" src="${escAttr(m.url || m.thumbnailUrl || '')}" alt="" onerror="this.style.display='none'">`
+      ).join('');
+    } else if (mediaCount > 0) {
+      mediaPart = `<span class="template-card-media-badge">📎 ${mediaCount} attachment${mediaCount > 1 ? 's' : ''}</span>`;
+    }
+    return `<div class="template-card" onclick="selectTemplate(${i})">
+      <div class="template-card-text">${escHtml(text) || '<em style="color:var(--text3)">[Media only]</em>'}</div>
+      <div class="template-card-footer">
+        <div class="template-card-thumbs">${mediaPart}</div>
+        <span class="template-price-badge ${priceClass}">${priceFmt}</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('tmpl-footer').style.display = tc.hasMore ? '' : 'none';
+}
+
+function selectTemplate(index) {
+  const t = templatesCache.data[index];
+  if (!t) return;
+  closeScriptsModal();
+  // Populate compose
+  const input = document.getElementById('reply-input');
+  if (input) input.value = t.text || '';
+  selectedTemplateUuid = t.uuid || t.id;
+  selectedTemplatePrice = t.price || 0;
+  selectedMediaUuids = t.mediaUuids || [];
+  // Show preview strip
+  renderTemplatePreview(t);
+  // Show clear button
+  const clearBtn = document.getElementById('btn-clear-template');
+  if (clearBtn) clearBtn.style.display = '';
+  if (input) input.focus();
+}
+
+function renderTemplatePreview(template) {
+  const el = document.getElementById('template-preview');
+  if (!el) return;
+  const mediaCount = (template.mediaUuids || []).length;
+  const media = template.media || [];
+  let thumbsHtml = '';
+  if (media.length > 0) {
+    thumbsHtml = media.slice(0, 6).map(m => {
+      const src = escAttr(m.url || m.thumbnailUrl || '');
+      return `<img class="tmpl-thumb" src="${src}" alt="" onclick="openLightbox('${src}')" onerror="this.style.display='none'">`;
+    }).join('');
+  } else if (mediaCount > 0) {
+    thumbsHtml = `<span style="font-size:12px;color:var(--text3)">📎 ${mediaCount} attachment${mediaCount > 1 ? 's' : ''}</span>`;
+  }
+  const priceVal = (selectedTemplatePrice / 100).toFixed(2);
+  el.innerHTML = `
+    <div class="tmpl-thumbs">${thumbsHtml}</div>
+    <div class="tmpl-price-wrap">
+      <span style="font-size:12px;color:var(--text3)">$</span>
+      <input type="number" class="tmpl-price-input" id="tmpl-price" value="${priceVal}" min="0" step="0.01"
+        onchange="selectedTemplatePrice = Math.round(Math.max(0, parseFloat(this.value || 0)) * 100)">
+    </div>`;
+  el.style.display = mediaCount > 0 || selectedTemplatePrice > 0 ? 'flex' : 'none';
+}
+
+function clearCompose() {
+  const input = document.getElementById('reply-input');
+  if (input) input.value = '';
+  selectedTemplateUuid = null;
+  selectedTemplatePrice = null;
+  selectedMediaUuids = [];
+  const preview = document.getElementById('template-preview');
+  if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+  const clearBtn = document.getElementById('btn-clear-template');
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+
+function openLightbox(src) {
+  if (!src) return;
+  const existing = document.getElementById('lightbox');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox';
+  overlay.id = 'lightbox';
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', escHandler); };
+  overlay.onclick = close;
+  const isVideo = /\.(mp4|webm|mov)/i.test(src);
+  if (isVideo) {
+    overlay.innerHTML = `<video src="${escAttr(src)}" controls autoplay></video>`;
+  } else {
+    overlay.innerHTML = `<img src="${escAttr(src)}" alt="Preview">`;
+  }
+  document.body.appendChild(overlay);
+  const escHandler = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', escHandler);
 }
 
 // ─── SCRIPTS ───────────────────────────────────────────────

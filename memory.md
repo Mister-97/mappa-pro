@@ -89,3 +89,29 @@ Opening a conversation made 3 live Fanvue API calls (150 messages) every time, b
 ### Performance Result
 - **Before:** 3 Fanvue API calls + upsert + attribution = ~8 seconds
 - **After:** 3 parallel Supabase queries (conversation + 20 messages + script_run) = ~500ms
+
+## 2026-03-01 — Unread badges fix + faster polling + auto-refresh
+
+### Problem
+1. Creator tab unread badges always showed 0 — `connected_accounts` has no `unread_count` column, so `a.unread_count` from the dashboard API was always `undefined`.
+2. Inbox poller ran every 60s — too slow for responsive feel.
+3. After initial load, unread counts and conversation lists never refreshed automatically.
+4. Clicking an unread conversation didn't clear the unread dot in the conversation list (only decremented the badge).
+
+### Changes Made
+
+**`services/inboxPoller.js` — 15s polling**
+- Changed cron from `*/60` to `*/15` seconds
+
+**`routes/dashboard.js` — Unread count per account**
+- Added 4th parallel query to `Promise.all`: selects all `conversations` where `is_unread = true` for the org
+- Builds `Map<accountId, count>` from results and merges `unread_count` onto each account object before returning
+
+**`flowdesk-complete.html` — Frontend fixes**
+- `loadInbox()`: After setting `st.loaded = true`, recalculates `st.unreadCount` from `inboxConvos.filter(c => c.is_unread).length` and calls `renderCreatorTabs()`
+- Added `inboxListPollInterval` state variable
+- `startInboxListPolling()`: 20-second `setInterval` that silently re-fetches conversations for `activeAcctId`, updates `inboxConvos`, `st.convos`, `st.unreadCount`, re-renders list + tabs (no loading spinner)
+- `stopInboxListPolling()`: clears the interval
+- `showPanel()`: starts polling on `'inbox'`, stops on any other panel
+- `logout()`: calls `stopInboxListPolling()`
+- `openConvoFromList()`: added `renderConvoList(inboxConvos)` after marking convo as read so the unread dot clears immediately

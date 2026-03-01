@@ -3,6 +3,7 @@
 > **Also read `spec.md`** for the product roadmap and **`memory.md`** for detailed code change notes and session history.
 > Last updated: 2026-02-26 — Conversation loading perf overhaul, DB-first queries, frontend caching
 > Last updated: 2026-02-27 — Analytics fully wired, account status badge fixes
+> Last updated: 2026-03-01 — Unread badges fix, 15s poller, 20s frontend auto-refresh
 
 ---
 
@@ -99,7 +100,9 @@
 
 - OAuth2 PKCE login flow for Fanvue creators ✅
 - DB-first conversation loading with cursor pagination (~500ms, was ~8s) ✅
-- Inbox poller syncs full message pages (50 msgs) for active conversations ✅
+- Inbox poller syncs full message pages (50 msgs) every 15s for active conversations ✅
+- Unread badges on creator tabs computed from conversation data (not DB column) ✅
+- Silent 20s conversation list auto-refresh when inbox panel is active ✅
 - Frontend scroll-up pagination (loads older messages on scroll) ✅
 - Frontend live polling (7s interval for new incoming messages) ✅
 - Conversation caching (switching back restores instantly from memory) ✅
@@ -209,6 +212,7 @@ The backend wraps the normalised data in an `insights` key:
 
 | Commit | Description |
 |---|---|
+| `d7c34d9` | fix: unread badges + faster polling + auto-refresh inbox |
 | `1a9dafe` | fix: prioritise is_active over needs_reconnect in status badges |
 | `7ae128b` | fix: clear needs_reconnect flag on successful OAuth callback |
 | `ba9a7e3` | feat: analytics - add All Time period, fix display bugs, add breakdown & top spenders |
