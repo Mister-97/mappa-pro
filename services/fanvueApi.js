@@ -374,5 +374,6 @@ module.exports = {
   getTemplates,
   getTemplate,
   getValidToken,
-  refreshToken
+  refreshToken,
+  rawRequest: fanvueRequest
 };

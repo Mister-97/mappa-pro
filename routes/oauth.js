@@ -12,17 +12,14 @@ const FANVUE_AUTH_URL = 'https://auth.fanvue.com/oauth2/auth';
 const FANVUE_TOKEN_URL = 'https://auth.fanvue.com/oauth2/token';
 const FANVUE_API_BASE = 'https://api.fanvue.com';
 
-// In-memory PKCE store (use Redis in production)
-const pkceStore = new Map();
-
 /**
  * GET /api/oauth/connect
  * Initiate Fanvue OAuth flow for a creator account.
  * Resolves user/org from JWT token query param, falls back to AUTH_BYPASS env vars.
- * Query params: ?label=ModelName&token=JWT
+ * Query params: ?label=ModelName&token=JWT&accountId=UUID (for reconnects)
  */
 router.get('/connect', async (req, res) => {
-  const { label, token } = req.query;
+  const { label, token, accountId } = req.query;
 
   // Resolve user identity from JWT token or AUTH_BYPASS defaults
   let userId = process.env.DEFAULT_USER_ID || 'dev-user';
@@ -51,21 +48,20 @@ router.get('/connect', async (req, res) => {
     .update(codeVerifier)
     .digest('base64url');
 
-  const state = crypto.randomBytes(16).toString('hex');
-
-  pkceStore.set(state, {
+  // Encode PKCE data in the state as a signed JWT — survives server restarts
+  const state = jwt.sign({
     codeVerifier,
     userId,
     organizationId,
     label: (label || '').trim() || 'New Account',
-    expiresAt: Date.now() + 10 * 60 * 1000
-  });
+    accountId: accountId || null
+  }, process.env.JWT_SECRET, { expiresIn: '10m' });
 
   const params = new URLSearchParams({
     client_id: process.env.FANVUE_CLIENT_ID,
     redirect_uri: process.env.FANVUE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid offline_access offline read:self read:chat read:creator write:chat read:fan read:insights',
+    scope: 'openid offline_access offline read:self read:chat read:creator write:chat read:fan read:insights read:media',
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256'
@@ -87,11 +83,12 @@ router.get('/callback', async (req, res, next) => {
       return res.redirect(`${process.env.FRONTEND_URL}?oauth_error=${error}`);
     }
 
-    const pkceData = pkceStore.get(state);
-    if (!pkceData || Date.now() > pkceData.expiresAt) {
+    let pkceData;
+    try {
+      pkceData = jwt.verify(state, process.env.JWT_SECRET);
+    } catch (e) {
       return res.redirect(`${process.env.FRONTEND_URL}?oauth_error=invalid_state`);
     }
-    pkceStore.delete(state);
 
     // Exchange code for tokens
     const credentials = Buffer.from(
@@ -191,7 +188,7 @@ router.delete('/disconnect/:accountId', authenticate, async (req, res, next) => 
 
     await supabase
       .from('connected_accounts')
-      .update({ is_active: false, access_token_enc: null, refresh_token_enc: null })
+      .update({ is_active: false, needs_reconnect: true, access_token_enc: null, refresh_token_enc: null })
       .eq('id', accountId);
 
     res.json({ message: 'Account disconnected successfully' });

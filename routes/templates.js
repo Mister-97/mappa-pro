@@ -33,6 +33,10 @@ router.get('/', authenticate, async (req, res, next) => {
       folderName: folderName || null
     });
 
+    // NOTE: Fanvue's template endpoints only return mediaUuids (bare UUIDs), not media URLs.
+    // The /media/{uuid} endpoint exists but requires read:media scope (not yet authorized).
+    // For now, the frontend shows a "📎 N attachments" badge as fallback.
+
     res.json(response);
   } catch (err) {
     next(err);

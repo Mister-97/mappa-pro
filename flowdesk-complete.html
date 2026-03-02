@@ -206,6 +206,16 @@
     margin-top: 5px; flex-shrink: 0;
   }
   .conv-item.unread .conv-name { color: var(--accent); }
+  .conv-item { position: relative; }
+  .conv-newtab-btn {
+    display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--bg2); color: var(--text2); font-size: 14px; line-height: 1;
+    cursor: pointer; align-items: center; justify-content: center; padding: 0;
+    font-family: inherit;
+  }
+  .conv-newtab-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .conv-item:hover .conv-newtab-btn { display: flex; }
 
   /* ── CREATOR TABS ── */
   .inbox-outer { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
@@ -341,7 +351,7 @@
   }
   .scripts-modal-inner {
     background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
-    width: 560px; max-height: 80vh; display: flex; flex-direction: column;
+    width: 640px; max-height: 80vh; display: flex; flex-direction: column;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   }
   .scripts-modal-header {
@@ -355,13 +365,16 @@
   }
   .scripts-modal-close:hover { color: var(--text); }
   .scripts-modal-folders {
-    padding: 10px 20px; border-bottom: 1px solid var(--border);
-    display: flex; gap: 8px; overflow-x: auto;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; overflow-x: auto; flex-shrink: 0;
   }
   .scripts-modal-folders .folder-btn {
-    padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    padding: 6px 16px; border-radius: 20px; font-size: 13px; cursor: pointer;
     border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
-    white-space: nowrap;
+    white-space: nowrap; transition: all 0.15s;
+  }
+  .scripts-modal-folders .folder-btn:hover {
+    border-color: var(--accent); color: var(--accent); background: var(--accent-dim);
   }
   .scripts-modal-folders .folder-btn.active {
     background: var(--accent); border-color: var(--accent); color: #fff;
@@ -1377,6 +1390,7 @@ let selectedTemplateUuid = null;
 let selectedTemplatePrice = null; // in cents
 let selectedMediaUuids = [];
 let templatesCache = null; // { data, folders, hasMore, page }
+const templateMediaCache = new Map(); // uuid → media array, persists across folder switches
 
 // ─── TABBED INBOX STATE ─────────────────────────────────
 const MAX_CONVO_TABS = 12;
@@ -2006,7 +2020,9 @@ async function loadAccountsPanel() {
         <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
         <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
         <td>
-          ${a.needs_reconnect ? `<button class="btn-sm" onclick="reconnectAccount('${a.id}')">Reconnect</button>` : ''}
+          ${a.needs_reconnect || !a.is_active
+            ? `<button class="btn-sm" onclick="reconnectAccount('${a.id}')">Reconnect</button>`
+            : `<button class="btn-sm" onclick="disconnectAccount('${a.id}')">Disconnect</button>`}
           <button class="btn-sm" onclick="syncAccount('${a.id}')">Sync</button>
         </td>
       </tr>`).join('');
@@ -2035,13 +2051,18 @@ async function syncAccount(id) {
   }
 }
 
-async function reconnectAccount(id) {
+function reconnectAccount(id) {
+  window.location.href = `/api/oauth/connect?accountId=${id}&token=${token}`;
+}
+
+async function disconnectAccount(id) {
+  if (!confirm('Disconnect this account? You can reconnect it later.')) return;
   try {
-    const d = await api(`/api/oauth/connect?accountId=${id}`);
-    if (d.authUrl) window.location.href = d.authUrl;
-    else alert('Failed to get auth URL');
+    await api(`/api/oauth/disconnect/${id}`, { method: 'DELETE' });
+    toast('Account disconnected');
+    loadAccountsPanel();
   } catch (e) {
-    alert('Reconnect failed: ' + e.message);
+    toast('Disconnect failed: ' + e.message, 'error');
   }
 }
 
@@ -2456,6 +2477,21 @@ function addConvoTab(convoId, name, encodedName) {
   st.openTabs.push({ convoId, name, encodedName });
 }
 
+function replaceActiveTab(convoId, name, encodedName) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  // No tabs yet — create the first one
+  if (!st.openTabs.length) { addConvoTab(convoId, name, encodedName); return; }
+  // Already open in a tab — caller will activate it
+  if (st.openTabs.find(t => t.convoId === convoId)) return;
+  // Replace the active tab's content
+  const activeIdx = st.openTabs.findIndex(t => t.convoId === st.activeTabId);
+  if (activeIdx === -1) { addConvoTab(convoId, name, encodedName); return; }
+  const old = st.openTabs[activeIdx];
+  convoCache.delete(old.convoId);
+  st.openTabs[activeIdx] = { convoId, name, encodedName };
+}
+
 function closeConvoTab(convoId) {
   if (!activeAcctId) return;
   const st = getAcctState(activeAcctId);
@@ -2504,21 +2540,14 @@ function activateConvoTab(convoId) {
   renderConvoTabs();
 }
 
-function openConvoFromList(convoId, encodedName) {
-  if (!activeAcctId) return;
-  const name = decodeURIComponent(encodedName);
-  addConvoTab(convoId, name, encodedName);
+function decrementUnreadIfNeeded(convoId) {
   const st = getAcctState(activeAcctId);
-  st.activeTabId = convoId;
-
-  // Decrement unread count if conversation was unread
   const convo = inboxConvos.find(c => c.id === convoId);
   if (convo?.is_unread) {
     convo.is_unread = false;
     st.unreadCount = Math.max(0, st.unreadCount - 1);
     renderCreatorTabs();
     renderConvoList(inboxConvos);
-    // Update sidebar badge
     const totalUnread = Array.from(acctState.values()).reduce((a, s) => a + s.unreadCount, 0);
     const badge = document.getElementById('inbox-badge');
     if (badge) {
@@ -2526,7 +2555,33 @@ function openConvoFromList(convoId, encodedName) {
       badge.textContent = totalUnread;
     }
   }
+}
 
+function openConvoFromList(convoId, encodedName) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  const name = decodeURIComponent(encodedName);
+  // Already open in a tab? Just switch to it
+  if (st.openTabs.find(t => t.convoId === convoId)) {
+    activateConvoTab(convoId);
+    decrementUnreadIfNeeded(convoId);
+    return;
+  }
+  // Replace the active tab
+  replaceActiveTab(convoId, name, encodedName);
+  st.activeTabId = convoId;
+  decrementUnreadIfNeeded(convoId);
+  openConvo(convoId, encodedName);
+  renderConvoTabs();
+}
+
+function openConvoInNewTab(convoId, encodedName) {
+  if (!activeAcctId) return;
+  const name = decodeURIComponent(encodedName);
+  addConvoTab(convoId, name, encodedName);
+  const st = getAcctState(activeAcctId);
+  st.activeTabId = convoId;
+  decrementUnreadIfNeeded(convoId);
   openConvo(convoId, encodedName);
   renderConvoTabs();
 }
@@ -2599,6 +2654,7 @@ function renderConvoList(convos) {
         <div class="conv-preview">${c.last_message_preview || '—'}</div>
       </div>
       ${c.is_unread ? '<div class="unread-dot"></div>' : ''}
+      <button class="conv-newtab-btn" onclick="event.stopPropagation();openConvoInNewTab('${c.id}','${encodeName(name)}')" title="Open in new tab">+</button>
     </div>`;
   }).join('');
 }
@@ -3001,11 +3057,16 @@ function sendMsg(convoId) {
   appendOptimisticMsg(tempId, displayText);
   const queueItem = { tempId, convoId, content, status: 'queued' };
   if (selectedTemplateUuid) {
-    queueItem.templateUuid = selectedTemplateUuid;
     queueItem.mediaUuids = selectedMediaUuids;
     const priceInput = document.getElementById('tmpl-price');
     if (priceInput) selectedTemplatePrice = Math.round(Math.max(0, parseFloat(priceInput.value || 0)) * 100);
-    if (selectedTemplatePrice > 0) queueItem.ppvPrice = selectedTemplatePrice;
+    if (selectedTemplatePrice > 0) {
+      // Priced message: send as raw PPV with media — Fanvue ignores price/mediaUuids when templateUuid is present
+      queueItem.ppvPrice = selectedTemplatePrice;
+    } else {
+      // Free template: send with templateUuid so Fanvue uses the template as-is
+      queueItem.templateUuid = selectedTemplateUuid;
+    }
   }
   msgQueue.push(queueItem);
   clearCompose();
@@ -3115,7 +3176,7 @@ async function openScriptsModal() {
     </div>`;
   document.body.appendChild(overlay);
   document.addEventListener('keydown', scriptsModalEscHandler);
-  templatesCache = { data: [], folders: new Set(), hasMore: false, page: 0, activeFolder: null };
+  templatesCache = { data: [], folders: [], hasMore: false, page: 0, activeFolder: null };
   await loadMoreTemplates();
 }
 
@@ -3137,10 +3198,19 @@ async function loadMoreTemplates() {
     if (tc.activeFolder) url += `&folderName=${encodeURIComponent(tc.activeFolder)}`;
     const resp = await api(url);
     const items = resp.data || resp || [];
+    // Merge media from cache or store new media into cache
+    items.forEach(t => {
+      const uid = t.uuid || t.id;
+      if (t.media?.length > 0) {
+        templateMediaCache.set(uid, t.media);
+      } else if (templateMediaCache.has(uid)) {
+        t.media = templateMediaCache.get(uid);
+      }
+    });
     tc.data = tc.data.concat(items);
     tc.hasMore = resp.pagination ? (tc.page < resp.pagination.totalPages) : items.length === 50;
     // Collect folders
-    items.forEach(t => { if (t.folderName) tc.folders.add(t.folderName); });
+    items.forEach(t => { if (t.folderName && !tc.folders.includes(t.folderName)) tc.folders.push(t.folderName); });
     renderTemplatesList();
     renderTemplateFolders();
   } catch (e) {
@@ -3151,7 +3221,7 @@ async function loadMoreTemplates() {
 function renderTemplateFolders() {
   const el = document.getElementById('tmpl-folders');
   const tc = templatesCache;
-  if (tc.folders.size === 0) { el.style.display = 'none'; return; }
+  if (tc.folders.length === 0) { el.style.display = 'none'; return; }
   el.style.display = 'flex';
   const folders = ['All', ...tc.folders];
   el.innerHTML = folders.map(f => {
@@ -3176,7 +3246,8 @@ function renderTemplatesList() {
     document.getElementById('tmpl-footer').style.display = 'none';
     return;
   }
-  list.innerHTML = tc.data.map((t, i) => {
+  list.innerHTML = tc.data.map(t => {
+    const uid = t.uuid || t.id;
     const text = (t.text || '').substring(0, 120) + ((t.text || '').length > 120 ? '...' : '');
     const price = t.price ? t.price : 0;
     const priceFmt = price > 0 ? `$${(price / 100).toFixed(2)}` : 'Free';
@@ -3184,13 +3255,15 @@ function renderTemplatesList() {
     const mediaCount = (t.mediaUuids || []).length;
     let mediaPart = '';
     if (t.media && t.media.length > 0) {
-      mediaPart = t.media.slice(0, 4).map(m =>
+      const thumbs = t.media.slice(0, 4).map(m =>
         `<img class="template-card-thumb" src="${escAttr(m.url || m.thumbnailUrl || '')}" alt="" onerror="this.style.display='none'">`
       ).join('');
+      const overflow = t.media.length > 4 ? `<span class="template-card-media-badge">+${t.media.length - 4}</span>` : '';
+      mediaPart = thumbs + overflow;
     } else if (mediaCount > 0) {
       mediaPart = `<span class="template-card-media-badge">📎 ${mediaCount} attachment${mediaCount > 1 ? 's' : ''}</span>`;
     }
-    return `<div class="template-card" onclick="selectTemplate(${i})">
+    return `<div class="template-card" onclick="selectTemplate('${uid}')">
       <div class="template-card-text">${escHtml(text) || '<em style="color:var(--text3)">[Media only]</em>'}</div>
       <div class="template-card-footer">
         <div class="template-card-thumbs">${mediaPart}</div>
@@ -3201,8 +3274,8 @@ function renderTemplatesList() {
   document.getElementById('tmpl-footer').style.display = tc.hasMore ? '' : 'none';
 }
 
-function selectTemplate(index) {
-  const t = templatesCache.data[index];
+function selectTemplate(uuid) {
+  const t = templatesCache.data.find(d => (d.uuid || d.id) === uuid);
   if (!t) return;
   closeScriptsModal();
   // Populate compose
@@ -3232,8 +3305,10 @@ function renderTemplatePreview(template) {
     }).join('');
   } else if (mediaCount > 0) {
     thumbsHtml = `<span style="font-size:12px;color:var(--text3)">📎 ${mediaCount} attachment${mediaCount > 1 ? 's' : ''}</span>`;
+  } else {
+    thumbsHtml = `<span style="font-size:12px;color:var(--text3)">No attachments</span>`;
   }
-  const priceVal = (selectedTemplatePrice / 100).toFixed(2);
+  const priceVal = ((selectedTemplatePrice || 0) / 100).toFixed(2);
   el.innerHTML = `
     <div class="tmpl-thumbs">${thumbsHtml}</div>
     <div class="tmpl-price-wrap">
@@ -3241,7 +3316,7 @@ function renderTemplatePreview(template) {
       <input type="number" class="tmpl-price-input" id="tmpl-price" value="${priceVal}" min="0" step="0.01"
         onchange="selectedTemplatePrice = Math.round(Math.max(0, parseFloat(this.value || 0)) * 100)">
     </div>`;
-  el.style.display = mediaCount > 0 || selectedTemplatePrice > 0 ? 'flex' : 'none';
+  el.style.display = 'flex';
 }
 
 function clearCompose() {

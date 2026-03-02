@@ -115,3 +115,31 @@ Opening a conversation made 3 live Fanvue API calls (150 messages) every time, b
 - `showPanel()`: starts polling on `'inbox'`, stops on any other panel
 - `logout()`: calls `stopInboxListPolling()`
 - `openConvoFromList()`: added `renderConvoList(inboxConvos)` after marking convo as read so the unread dot clears immediately
+
+## 2026-03-02 — Disconnect button, stateless OAuth, templates, tabbed convos
+
+### Disconnect/Reconnect Button
+- Added `disconnectAccount(id)` function to frontend — calls `DELETE /api/oauth/disconnect/:id` with confirmation dialog
+- Accounts table now shows "Disconnect" for active accounts, "Reconnect" for disconnected/needs_reconnect accounts
+- Backend disconnect endpoint (`routes/oauth.js`) now also sets `needs_reconnect: true` alongside clearing tokens
+
+### Stateless OAuth PKCE (fixed `invalid_state` on Render)
+- **Problem:** `pkceStore` was an in-memory `Map` — wiped on every Render server restart/deploy, causing `invalid_state` errors on OAuth callback
+- **Fix:** Replaced in-memory Map with a signed JWT as the `state` parameter itself. The JWT contains `codeVerifier`, `userId`, `organizationId`, `label`, `accountId` and is signed with `JWT_SECRET` (10min expiry)
+- No server-side storage needed — fully stateless, survives any restart
+- Also added `accountId` passthrough from `reconnectAccount()` for future use
+- Fixed `reconnectAccount()` — was calling `api()` expecting JSON, now does direct `window.location.href` redirect to `/api/oauth/connect`
+- Added `read:media` to OAuth scope
+
+### Templates Browsing & Sending (from earlier commits on this branch)
+- Templates modal with folder filtering, paginated loading
+- `templateMediaCache` Map persists media across folder switches
+- `selectTemplate()` now uses UUID lookup instead of array index (survives re-renders)
+- PPV pricing: priced templates sent as raw PPV with media (Fanvue ignores price when templateUuid present), free templates sent with templateUuid
+- Template preview bar always visible when template selected
+
+### Tabbed Conversations Improvements
+- Click on conversation list replaces active tab (instead of always opening new tab)
+- "+" button on hover opens conversation in new tab
+- `replaceActiveTab()` and `openConvoInNewTab()` functions added
+- `decrementUnreadIfNeeded()` extracted as shared helper

@@ -296,7 +296,7 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
   try {
     const { content, mediaUrls = [], isPpv = false, ppvPrice, scriptRunId, templateUuid, mediaUuids } = req.body;
 
-    if (!content && mediaUrls.length === 0 && !templateUuid) {
+    if (!content && mediaUrls.length === 0 && !templateUuid && (!mediaUuids || mediaUuids.length === 0)) {
       return res.status(400).json({ error: 'content, media, or template required' });
     }
 
