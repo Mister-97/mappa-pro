@@ -90,138 +90,69 @@ router.get('/', authenticate, async (req, res, next) => {
  */
 router.get('/:conversationId', authenticate, async (req, res, next) => {
   try {
-    // Use explicit FK constraint names to avoid ambiguous relationship errors
-    // fan_notes.author_id -> users uses constraint: fan_notes_author_id_fkey
-    const { data: conversation, error } = await supabase
-      .from('conversations')
-      .select(`
-        *,
-        fan:fans(*, fan_tags(tag), fan_notes(id, content, created_at, author:users!fan_notes_author_id_fkey(name))),
-        assigned_chatter:users!assigned_chatter_id(id, name),
-        account:connected_accounts(id, access_token_enc, refresh_token_enc, token_expires_at, fanvue_username)
-      `)
-      .eq('id', req.params.conversationId)
-      .eq('organization_id', req.user.organization_id)
-      .single();
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const before = req.query.before || null; // ISO timestamp for cursor pagination
 
+    // Run all queries in parallel
+    let msgQuery = supabase
+      .from('messages')
+      .select(`
+        id, direction, content, media_urls, is_ppv, ppv_price,
+        ppv_unlocked, ppv_unlocked_at, sent_at, platform_status,
+        sent_by_user:users(id, name), sent_by_automation, script_run_id
+      `)
+      .eq('conversation_id', req.params.conversationId)
+      .order('sent_at', { ascending: false, nullsFirst: false })
+      .order('id', { ascending: false })
+      .limit(limit);
+
+    if (before) {
+      msgQuery = msgQuery.lt('sent_at', before);
+    }
+
+    const [convResult, msgResult, runResult] = await Promise.all([
+      // Conversation with fan details
+      supabase
+        .from('conversations')
+        .select(`
+          *,
+          fan:fans(*, fan_tags(tag), fan_notes(id, content, created_at, author:users!fan_notes_author_id_fkey(name))),
+          assigned_chatter:users!assigned_chatter_id(id, name)
+        `)
+        .eq('id', req.params.conversationId)
+        .eq('organization_id', req.user.organization_id)
+        .single(),
+      // Paginated messages
+      msgQuery,
+      // Active script run
+      supabase
+        .from('script_runs')
+        .select('id, current_step, script:scripts(id, name, script_steps(*))')
+        .eq('conversation_id', req.params.conversationId)
+        .eq('status', 'active')
+        .single()
+    ]);
+
+    const { data: conversation, error } = convResult;
     if (error) {
       console.error('[ConvRoute] Supabase error fetching conversation:', error.message, error.code, error.details);
       return res.status(404).json({ error: 'Conversation not found' });
     }
     if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
 
-    // Mark as read
-    await supabase
-      .from('conversations')
-      .update({ is_unread: false, unread_count: 0 })
-      .eq('id', req.params.conversationId);
-
-    // fanvue_thread_id is the fan's Fanvue UUID — use it to fetch live messages
-    const fanvueUserUuid = conversation.fanvue_thread_id || conversation.fan?.fanvue_fan_id;
-    let messages = [];
-
-    if (fanvueUserUuid && conversation.account) {
-      try {
-        // Fetch up to 3 pages (150 messages) from Fanvue for full history
-        const pages = await Promise.allSettled([
-          fanvueApi.getChatMessages(conversation.account, fanvueUserUuid, 1, 50, true),
-          fanvueApi.getChatMessages(conversation.account, fanvueUserUuid, 2, 50, false),
-          fanvueApi.getChatMessages(conversation.account, fanvueUserUuid, 3, 50, false),
-        ]);
-
-        const allFanvueMessages = [];
-        for (const result of pages) {
-          if (result.status === 'fulfilled' && result.value?.data?.length) {
-            allFanvueMessages.push(...result.value.data);
-          }
-        }
-
-        if (allFanvueMessages.length > 0) {
-          // Map Fanvue messages to our schema
-          messages = allFanvueMessages.map(msg => {
-            // Fanvue message shape:
-            // { uuid, text, sentAt, createdAt, sender: { uuid }, attachments, pricing }
-            const isFromFan = msg.sender?.uuid === fanvueUserUuid;
-            return {
-              id: msg.uuid,
-              fanvue_message_id: msg.uuid,
-              conversation_id: conversation.id,
-              direction: isFromFan ? 'inbound' : 'outbound',
-              content: msg.text || null,
-              media_urls: msg.attachments?.map(a => a.url || a.fileUrl).filter(Boolean) || [],
-              is_ppv: (msg.pricing?.price > 0) || false,
-              ppv_price: msg.pricing?.price || null,
-              ppv_unlocked: msg.pricing?.isUnlocked || false,
-              sent_at: msg.sentAt || msg.createdAt,
-              platform_status: 'sent'
-            };
-          });
-
-          // Sort chronologically (oldest first)
-          messages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-
-          // Cache messages in DB (upsert to avoid duplicates)
-          const toUpsert = messages.map(m => ({
-            id: m.id,
-            conversation_id: conversation.id,
-            organization_id: req.user.organization_id,
-            fanvue_message_id: m.fanvue_message_id,
-            direction: m.direction,
-            content: m.content,
-            media_urls: m.media_urls,
-            is_ppv: m.is_ppv,
-            ppv_price: m.ppv_price,
-            ppv_unlocked: m.ppv_unlocked,
-            sent_at: m.sent_at,
-            platform_status: m.platform_status
-          }));
-
-          // Upsert in batches of 50
-          for (let i = 0; i < toUpsert.length; i += 50) {
-            try {
-              const { error: upsertErr } = await supabase
-                .from('messages')
-                .upsert(toUpsert.slice(i, i + 50), { onConflict: 'fanvue_message_id' });
-              if (upsertErr) console.error('[ConvRoute] Message cache error:', upsertErr.message);
-            } catch (upsertEx) {
-              console.error('[ConvRoute] Message cache exception:', upsertEx.message);
-            }
-          }
-        }
-      } catch (apiErr) {
-        console.error('[ConvRoute] Fanvue message fetch failed:', apiErr.message);
-        // Fall back to cached messages from DB
-      }
+    // Mark as read (only on initial load, not pagination) — fire and forget
+    if (!before) {
+      supabase
+        .from('conversations')
+        .update({ is_unread: false, unread_count: 0 })
+        .eq('id', req.params.conversationId)
+        .then(() => {});
     }
 
-    // If live fetch failed or returned nothing, fall back to DB cache
-    if (!messages.length) {
-      const { data: cachedMessages } = await supabase
-        .from('messages')
-        .select(`
-          id, direction, content, media_urls, is_ppv, ppv_price,
-          ppv_unlocked, ppv_unlocked_at, sent_at, platform_status,
-          sent_by_user:users(id, name), sent_by_automation, script_run_id
-        `)
-        .eq('conversation_id', req.params.conversationId)
-        .order('sent_at', { ascending: true, nullsFirst: false })
-        .order('id', { ascending: true })
-        .limit(200);
-      messages = cachedMessages || [];
-    }
+    const messages = (msgResult.data || []).reverse();
+    const has_more = (msgResult.data || []).length === limit;
 
-    // Get active script run if any
-    const { data: activeRun } = await supabase
-      .from('script_runs')
-      .select('id, current_step, script:scripts(id, name, script_steps(*))')
-      .eq('conversation_id', req.params.conversationId)
-      .eq('status', 'active')
-      .single();
-
-    // Strip sensitive account tokens before sending response
-    const { account, ...convWithoutAccount } = conversation;
-
-    res.json({ conversation: convWithoutAccount, messages, activeRun });
+    res.json({ conversation, messages, has_more, activeRun: runResult.data });
   } catch (err) {
     next(err);
   }
@@ -363,10 +294,10 @@ router.patch('/:conversationId/nickname', authenticate, async (req, res, next) =
  */
 router.post('/:conversationId/messages', authenticate, async (req, res, next) => {
   try {
-    const { content, mediaUrls = [], isPpv = false, ppvPrice, scriptRunId } = req.body;
+    const { content, mediaUrls = [], isPpv = false, ppvPrice, scriptRunId, templateUuid, mediaUuids } = req.body;
 
-    if (!content && mediaUrls.length === 0) {
-      return res.status(400).json({ error: 'content or media required' });
+    if (!content && mediaUrls.length === 0 && !templateUuid && (!mediaUuids || mediaUuids.length === 0)) {
+      return res.status(400).json({ error: 'content, media, or template required' });
     }
 
     const { data: conv, error: convError } = await supabase
@@ -387,8 +318,9 @@ router.post('/:conversationId/messages', authenticate, async (req, res, next) =>
         fanUserUuid,
         {
           text: content || null,
-          mediaUuids: [],
-          price: isPpv && ppvPrice ? ppvPrice : null
+          mediaUuids: mediaUuids || [],
+          price: ppvPrice != null && ppvPrice > 0 ? ppvPrice : null,
+          templateUuid: templateUuid || null
         }
       );
       // API spec: 201 response returns { messageUuid: "..." }

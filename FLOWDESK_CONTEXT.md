@@ -1,6 +1,9 @@
 # FlowDesk Project Context — Claude Handoff File
 > Paste this at the start of a new chat to get Claude up to speed instantly.
+> **Also read `spec.md`** for the product roadmap and **`memory.md`** for detailed code change notes and session history.
+> Last updated: 2026-02-26 — Conversation loading perf overhaul, DB-first queries, frontend caching
 > Last updated: 2026-02-27 — Analytics fully wired, account status badge fixes
+> Last updated: 2026-03-01 — Unread badges fix, 15s poller, 20s frontend auto-refresh
 
 ---
 
@@ -83,7 +86,7 @@
 | File | Purpose |
 |---|---|
 | `services/fanvueApi.js` | All Fanvue API calls — token management, refresh, all endpoints |
-| `routes/conversations.js` | Inbox list, single convo, send message, sync, lock/unlock |
+| `routes/conversations.js` | Inbox list, single convo (DB-first, paginated, parallel queries), send message, sync, lock/unlock |
 | `routes/analytics.js` | Overview stats, earnings, top-spenders, subscribers, spending — fully on Insights API |
 | `routes/fans.js` | Fan CRUD, notes, general notes, insights endpoint |
 | `routes/oauth.js` | Fanvue OAuth2 PKCE flow — callback stores tokens, sets `needs_reconnect: false`, redirects to `?oauth_success=true` |
@@ -96,9 +99,16 @@
 ## What's Working
 
 - OAuth2 PKCE login flow for Fanvue creators ✅
-- Live inbox fetching (up to 3 pages / 150 messages, cached in Supabase) ✅
+- DB-first conversation loading with cursor pagination (~500ms, was ~8s) ✅
+- Inbox poller syncs full message pages (50 msgs) every 15s for active conversations ✅
+- Unread badges on creator tabs computed from conversation data (not DB column) ✅
+- Silent 20s conversation list auto-refresh when inbox panel is active ✅
+- Frontend scroll-up pagination (loads older messages on scroll) ✅
+- Frontend live polling (7s interval for new incoming messages) ✅
+- Conversation caching (switching back restores instantly from memory) ✅
+- Sidebar preview updates immediately after sending ✅
 - Conversation list with unread/follow-up/mine filters ✅
-- Send messages ✅
+- Send messages with optimistic UI + deduplication ✅
 - Auth middleware fetches fresh `organization_id` from DB on every request ✅
 - All documented Fanvue API endpoints implemented ✅
 - Analytics overview endpoint wired up ✅
@@ -202,6 +212,7 @@ The backend wraps the normalised data in an `insights` key:
 
 | Commit | Description |
 |---|---|
+| `d7c34d9` | fix: unread badges + faster polling + auto-refresh inbox |
 | `1a9dafe` | fix: prioritise is_active over needs_reconnect in status badges |
 | `7ae128b` | fix: clear needs_reconnect flag on successful OAuth callback |
 | `ba9a7e3` | feat: analytics - add All Time period, fix display bugs, add breakdown & top spenders |
@@ -215,6 +226,28 @@ The backend wraps the normalised data in an `insights` key:
 
 ## Pending / Next Work
 
+1. ✅ `showFanDetailPanel()` — two-phase load: DB instant, Insights overlay async (commit 8432285)
+2. ✅ `routes/analytics.js` rewrite — all 5 endpoints on Insights API (commit e5232b5)
+3. ✅ Message ordering — fixed (sort by sent_at ASC in routes/conversations.js)
+
+### Next potential work
+- Wire analytics endpoints to frontend charts/tables in `flowdesk-complete.html`
+- Add pagination controls for top-spenders and earnings tables
+- Consider caching Insights API responses (rate limits)
+- Local dev OAuth: redirect URI points to Render production — must reconnect on production, then localhost picks up fresh tokens from shared Supabase DB
+
+### Known Fanvue API Limitations
+- **No fan-side read receipts** — Fanvue does not expose whether a fan has read/seen a message. The `isRead` field on conversations is creator-perspective only. No `message.read` webhook exists. `platform_status` is set to `'delivered'` for all fetched messages.
+- **Token refresh fragility** — Fanvue token refresh endpoint can return 404 if refresh token is revoked/expired. Only 401/403 from the refresh endpoint triggers `needs_reconnect`. Transient errors are tolerated.
+
+---
+
+## Maintenance Instructions
+
+- **Use timestamps** (YYYY-MM-DD HH:MM) when updating the "Last updated" line and changelog entries
+- **This file** is for high-level project context: what's working, pending work, key tables, env vars
+- **`memory.md`** is for detailed code change notes, session-by-session logs, and implementation specifics
+- **When resuming a session**, always read `FLOWDESK_CONTEXT.md`, `spec.md`, and `memory.md`
 - Add pagination controls for top-spenders (currently shows top 5)
 - Consider caching Insights API responses to avoid rate limits
 - Push `dev` → `main` when ready to go live with all recent fixes
@@ -225,6 +258,8 @@ The backend wraps the normalised data in an `insights` key:
 
 Tell Claude:
 > "I'm continuing work on FlowDesk. The context file is in the GitHub repo at `FLOWDESK_CONTEXT.md`."
+
+Claude should also read `spec.md` for the product roadmap and `memory.md` for detailed session notes and code changes.
 
 Claude can access the codebase via GitHub MCP (`Mister-97/mappa-pro`) and the DB via Supabase MCP (project ID `cafkoounmqnglhqokazr`).
 

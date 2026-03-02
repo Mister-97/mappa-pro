@@ -162,7 +162,7 @@
   .badge-gray { background: rgba(144,144,160,0.15); color: var(--text2); }
 
   /* ── INBOX ── */
-  #panel-inbox { flex-direction: row; padding: 0; gap: 0; overflow: hidden; }
+  #panel-inbox { flex-direction: column; padding: 0; gap: 0; overflow: hidden; }
 
   .inbox-sidebar {
     width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column;
@@ -206,6 +206,78 @@
     margin-top: 5px; flex-shrink: 0;
   }
   .conv-item.unread .conv-name { color: var(--accent); }
+  .conv-item { position: relative; }
+  .conv-newtab-btn {
+    display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--bg2); color: var(--text2); font-size: 14px; line-height: 1;
+    cursor: pointer; align-items: center; justify-content: center; padding: 0;
+    font-family: inherit;
+  }
+  .conv-newtab-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .conv-item:hover .conv-newtab-btn { display: flex; }
+
+  /* ── CREATOR TABS ── */
+  .inbox-outer { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .creator-tabs {
+    display: flex; gap: 0; background: var(--bg2); border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0; scrollbar-width: none;
+  }
+  .creator-tabs::-webkit-scrollbar { display: none; }
+  .creator-tab {
+    display: flex; align-items: center; gap: 8px; padding: 10px 18px;
+    font-size: 13px; color: var(--text2); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.15s; flex-shrink: 0;
+    background: transparent; border-top: none; border-left: none; border-right: none;
+    font-family: inherit;
+  }
+  .creator-tab:hover { color: var(--text); background: var(--bg3); }
+  .creator-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .creator-tab-avatar {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: var(--text2); overflow: hidden; flex-shrink: 0;
+  }
+  .creator-tab-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .creator-tab.active .creator-tab-avatar { color: var(--accent); }
+  .creator-tab-badge {
+    background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+  }
+
+  /* ── INBOX BODY ── */
+  .inbox-body { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
+
+  /* ── CONVERSATION TABS ── */
+  .convo-right { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-width: 0; }
+  .convo-tabs {
+    display: flex; gap: 0; background: var(--bg2); border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0; scrollbar-width: none; min-height: 0;
+  }
+  .convo-tabs:empty { display: none; }
+  .convo-tabs::-webkit-scrollbar { display: none; }
+  .convo-tab {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    font-size: 12px; color: var(--text2); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.15s; flex-shrink: 0;
+    background: transparent; border-top: none; border-left: none; border-right: none;
+    font-family: inherit; max-width: 180px;
+  }
+  .convo-tab:hover { color: var(--text); background: var(--bg3); }
+  .convo-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .convo-tab-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px;
+  }
+  .convo-tab-close {
+    font-size: 14px; line-height: 1; cursor: pointer; color: var(--text3);
+    padding: 0 2px; border-radius: 3px; background: transparent; border: none;
+    font-family: inherit;
+  }
+  .convo-tab-close:hover { color: var(--red); background: var(--bg3); }
+  .convo-tab-unread {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+  }
+  .convo-main-wrap { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
 
   .convo-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
   .convo-topbar {
@@ -224,6 +296,13 @@
   .msg.outbound .msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
   .msg.inbound .msg-bubble { background: var(--bg3); color: var(--text); border-bottom-left-radius: 4px; }
   .msg-time { font-size: 10px; color: var(--text3); padding: 0 4px; }
+  .msg-meta { display: flex; align-items: center; gap: 6px; padding: 0 4px; }
+  .msg-status { font-size: 10px; color: var(--text3); transition: opacity 0.3s; }
+  .msg-status.sending { color: var(--orange); }
+  .msg-status.sent { color: var(--green); }
+  .msg-status.failed { color: var(--red); }
+  .msg-chatter { font-size: 10px; color: var(--text3); }
+  .msg-retry { font-size: 10px; color: var(--blue); cursor: pointer; text-decoration: underline; }
   .convo-input-wrap {
     padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0;
   }
@@ -239,6 +318,109 @@
     align-self: flex-end;
   }
   .btn-send:hover { background: var(--accent2); }
+  .btn-scripts {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; color: var(--text2); font-size: 16px; cursor: pointer;
+    transition: all 0.15s; align-self: flex-end; line-height: 1;
+  }
+  .btn-scripts:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-clear {
+    background: none; border: none; color: var(--text3); font-size: 16px;
+    cursor: pointer; padding: 4px 8px; align-self: flex-end; line-height: 1;
+  }
+  .btn-clear:hover { color: var(--red); }
+  .template-preview {
+    padding: 8px 20px; border-bottom: 1px solid var(--border); display: flex;
+    align-items: center; gap: 10px; background: var(--bg2);
+  }
+  .template-preview .tmpl-thumbs { display: flex; gap: 6px; flex: 1; overflow-x: auto; }
+  .template-preview .tmpl-thumb {
+    width: 48px; height: 48px; border-radius: 6px; object-fit: cover; cursor: pointer;
+    border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .template-preview .tmpl-price-wrap {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  .template-preview .tmpl-price-input {
+    width: 70px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 8px; color: var(--text); font-size: 13px; text-align: right;
+  }
+  .scripts-modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 5000;
+    background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+  }
+  .scripts-modal-inner {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+    width: 640px; max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .scripts-modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .scripts-modal-header h3 { font-size: 15px; font-weight: 600; }
+  .scripts-modal-close {
+    background: none; border: none; color: var(--text3); font-size: 20px;
+    cursor: pointer; line-height: 1;
+  }
+  .scripts-modal-close:hover { color: var(--text); }
+  .scripts-modal-folders {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; overflow-x: auto; flex-shrink: 0;
+  }
+  .scripts-modal-folders .folder-btn {
+    padding: 6px 16px; border-radius: 20px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
+    white-space: nowrap; transition: all 0.15s;
+  }
+  .scripts-modal-folders .folder-btn:hover {
+    border-color: var(--accent); color: var(--accent); background: var(--accent-dim);
+  }
+  .scripts-modal-folders .folder-btn.active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .scripts-modal-body {
+    flex: 1; overflow-y: auto; padding: 12px;
+  }
+  .template-card {
+    padding: 14px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); margin-bottom: 8px; transition: all 0.15s;
+  }
+  .template-card:hover { border-color: var(--accent); background: var(--bg3); }
+  .template-card-text {
+    font-size: 13px; color: var(--text); line-height: 1.5;
+    max-height: 60px; overflow: hidden; margin-bottom: 8px;
+  }
+  .template-card-footer { display: flex; align-items: center; gap: 10px; }
+  .template-card-thumbs { display: flex; gap: 4px; flex: 1; }
+  .template-card-thumb {
+    width: 36px; height: 36px; border-radius: 4px; object-fit: cover;
+    border: 1px solid var(--border);
+  }
+  .template-card-media-badge {
+    font-size: 11px; color: var(--text3); background: var(--bg3);
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .template-price-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  }
+  .template-price-badge.paid { background: rgba(168,85,247,0.15); color: var(--accent); }
+  .template-price-badge.free { background: rgba(34,197,94,0.15); color: var(--green); }
+  .scripts-modal-footer {
+    padding: 12px 20px; border-top: 1px solid var(--border); text-align: center;
+  }
+  .btn-load-more {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 20px; color: var(--text2); font-size: 13px; cursor: pointer;
+  }
+  .btn-load-more:hover { border-color: var(--accent); color: var(--accent); }
+  .lightbox {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 6000;
+    background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+  .lightbox video { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
   .convo-empty {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     color: var(--text3); gap: 10px;
@@ -701,33 +883,34 @@
 
     <!-- ── INBOX ── -->
     <div class="panel" id="panel-inbox">
-      <div class="inbox-sidebar">
-        <div class="inbox-header">
-          <h2>Inbox</h2>
-          <input class="inbox-search" id="inbox-search" placeholder="Search fans..." oninput="filterConvos()" />
-        </div>
-        <div class="acct-select-wrap">
-          <select class="acct-select" id="inbox-acct" onchange="loadInbox()">
-            <option value="">Select account...</option>
-          </select>
-        </div>
-        <div class="inbox-filters">
-          <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
-          <button class="filter-btn" onclick="setFilter(this,'unread')">Unread</button>
-          <button class="filter-btn" onclick="setFilter(this,'follow_up')">Follow-up</button>
-        </div>
-        <div class="inbox-list" id="inbox-list">
-          <div class="loading">Select an account to load inbox</div>
-        </div>
-      </div>
-      <div class="convo-main" id="convo-main">
-        <div class="convo-empty">
-          <div class="icon">💬</div>
-          <div>Select a conversation</div>
-        </div>
-      </div>
-      <!-- Fan Detail Panel -->
-      <div class="fan-detail-panel" id="fan-detail-panel">
+      <div class="inbox-outer">
+        <div class="creator-tabs" id="creator-tabs"></div>
+        <div class="inbox-body">
+          <div class="inbox-sidebar">
+            <div class="inbox-header">
+              <h2>Inbox</h2>
+              <input class="inbox-search" id="inbox-search" placeholder="Search fans..." oninput="filterConvos()" />
+            </div>
+            <div class="inbox-filters" id="inbox-filters">
+              <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+              <button class="filter-btn" onclick="setFilter(this,'unread')">Unread</button>
+              <button class="filter-btn" onclick="setFilter(this,'follow_up')">Follow-up</button>
+            </div>
+            <div class="inbox-list" id="inbox-list">
+              <div class="loading">Loading inbox...</div>
+            </div>
+          </div>
+          <div class="convo-right">
+            <div class="convo-tabs" id="convo-tabs"></div>
+            <div class="convo-main-wrap">
+              <div class="convo-main" id="convo-main">
+                <div class="convo-empty">
+                  <div class="icon">💬</div>
+                  <div>Select a conversation</div>
+                </div>
+              </div>
+              <!-- Fan Detail Panel -->
+              <div class="fan-detail-panel" id="fan-detail-panel">
         <!-- Spending behavior -->
         <div class="fdp-section">
           <div class="fdp-section-title">Spending behavior</div>
@@ -825,7 +1008,11 @@
           <div class="fdp-summary-result" id="fdp-summary-result"></div>
         </div>
       </div>
-    </div>
+            </div><!-- .convo-main-wrap -->
+          </div><!-- .convo-right -->
+        </div><!-- .inbox-body -->
+      </div><!-- .inbox-outer -->
+    </div><!-- #panel-inbox -->
 
     <!-- ── ANALYTICS ── -->
     <div class="panel" id="panel-analytics">
@@ -1188,9 +1375,53 @@ let activeConvoId = null;
 let activeFanId = null;
 let activeConvoData = null;
 let nicknameEditMode = false;
+let oldestMsgTimestamp = null;
+let loadingOlder = false;
+let noMoreMessages = false;
+let livePollInterval = null;
+const convoCache = new Map(); // id -> { html, oldestTs, noMore, convoData, fanId }
 let summaryPeriods = ['Last 24 hours', 'Last 7 days', 'Last 30 days'];
 let currentSummaryPeriod = 0;
 let activeNoteFilter = 'all';
+const msgQueue = [];
+let queueProcessing = false;
+let tempIdCounter = 0;
+let selectedTemplateUuid = null;
+let selectedTemplatePrice = null; // in cents
+let selectedMediaUuids = [];
+let templatesCache = null; // { data, folders, hasMore, page }
+const templateMediaCache = new Map(); // uuid → media array, persists across folder switches
+
+// ─── TABBED INBOX STATE ─────────────────────────────────
+const MAX_CONVO_TABS = 12;
+const acctState = new Map(); // accountId -> per-account state
+let activeAcctId = null;
+let inboxInitialized = false;
+let inboxListPollInterval = null;
+
+function createAcctState() {
+  return {
+    convos: [],
+    convoFilter: 'all',
+    searchText: '',
+    openTabs: [],       // [{ convoId, name, encodedName }]
+    activeTabId: null,
+    unreadCount: 0,
+    loaded: false
+  };
+}
+
+function getAcctState(id) {
+  if (!acctState.has(id)) acctState.set(id, createAcctState());
+  return acctState.get(id);
+}
+
+function syncGlobalsFromAcct() {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  inboxConvos = st.convos;
+  inboxFilter = st.convoFilter;
+}
 
 // ─── HELPERS ─────────────────────────────────────────────
 async function api(path, opts = {}) {
@@ -1309,6 +1540,7 @@ async function authSubmit() {
 }
 
 function logout() {
+  stopInboxListPolling();
   token = '';
   currentUser = null;
   accounts = [];
@@ -1341,6 +1573,18 @@ function showPanel(name) {
   if (name === 'accounts') loadAccountsPanel();
   if (name === 'team') loadFullTeam();
   if (name === 'settings') loadSettings();
+  if (name === 'inbox') {
+    if (!inboxInitialized && accounts.length > 0) {
+      inboxInitialized = true;
+      populateAcctSelects();
+    } else if (activeAcctId) {
+      renderCreatorTabs();
+      renderConvoTabs();
+    }
+    startInboxListPolling();
+  } else {
+    stopInboxListPolling();
+  }
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────
@@ -1373,7 +1617,11 @@ async function loadDashboard() {
     document.getElementById('ov-team-sub').textContent = `${d.team?.total ?? 0} team member${d.team?.total === 1 ? '' : 's'}`;
 
     accounts = d.accounts?.all || [];
-    populateAcctSelects();
+    // Initialize acctState with unread counts (but don't render tabs or load inbox yet)
+    accounts.filter(a => a.is_active).forEach(a => {
+      const st = getAcctState(a.id);
+      st.unreadCount = a.unread_count || 0;
+    });
 
     // Populate per-overview widget account selectors
     const activeAccounts = accounts.filter(a => a.is_active);
@@ -1649,16 +1897,108 @@ async function saveOrg() {
 
 // ─── ACCOUNTS ─────────────────────────────────────────────
 function populateAcctSelects() {
-  populateAcctSelect('inbox-acct');
+  // Initialize acctState for each active account
+  const active = accounts.filter(a => a.is_active);
+  active.forEach(a => {
+    const st = getAcctState(a.id);
+    st.unreadCount = a.unread_count || 0;
+  });
+  renderCreatorTabs();
+  // Auto-select first account if none active
+  if (!activeAcctId && active.length > 0) {
+    switchCreatorTab(active[0].id);
+  }
 }
 
-function populateAcctSelect(selectId) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Select account...</option>' +
-    accounts.filter(a => a.is_active).map(a => `<option value="${a.id}">${a.label || a.fanvue_display_name || a.fanvue_username}</option>`).join('');
-  if (cur) sel.value = cur;
+function renderCreatorTabs() {
+  const container = document.getElementById('creator-tabs');
+  const active = accounts.filter(a => a.is_active);
+  if (active.length === 0) {
+    container.innerHTML = '<div style="padding:10px 18px;font-size:13px;color:var(--text3);">No accounts connected</div>';
+    return;
+  }
+  container.innerHTML = active.map(a => {
+    const st = getAcctState(a.id);
+    const label = a.label || a.fanvue_display_name || a.fanvue_username || '?';
+    const initials = label[0].toUpperCase();
+    const isActive = a.id === activeAcctId;
+    const badge = st.unreadCount > 0 ? `<span class="creator-tab-badge">${st.unreadCount}</span>` : '';
+    const avatar = a.avatar_url
+      ? `<div class="creator-tab-avatar"><img src="${a.avatar_url}" onerror="this.parentElement.textContent='${initials}'"></div>`
+      : `<div class="creator-tab-avatar">${initials}</div>`;
+    return `<button class="creator-tab${isActive ? ' active' : ''}" onclick="switchCreatorTab('${a.id}')">
+      ${avatar}<span>${label}</span>${badge}
+    </button>`;
+  }).join('');
+}
+
+async function switchCreatorTab(accountId) {
+  if (activeAcctId === accountId) return;
+
+  // Save current account state
+  if (activeAcctId) {
+    const prev = getAcctState(activeAcctId);
+    prev.convos = inboxConvos;
+    prev.convoFilter = inboxFilter;
+    prev.searchText = document.getElementById('inbox-search')?.value || '';
+    // Save current conversation to cache
+    if (activeConvoId) saveConvoToCache(activeConvoId);
+  }
+
+  // Clear live poll
+  if (livePollInterval) { clearInterval(livePollInterval); livePollInterval = null; }
+
+  activeAcctId = accountId;
+  const st = getAcctState(accountId);
+
+  // Restore filter buttons
+  inboxFilter = st.convoFilter;
+  const filterMap = { 'All': 'all', 'Unread': 'unread', 'Follow-up': 'follow_up' };
+  document.querySelectorAll('#inbox-filters .filter-btn').forEach(btn => {
+    btn.classList.toggle('active', filterMap[btn.textContent] === inboxFilter);
+  });
+
+  // Restore search text
+  const searchEl = document.getElementById('inbox-search');
+  if (searchEl) searchEl.value = st.searchText;
+
+  // Restore or load conversations
+  if (st.loaded) {
+    inboxConvos = st.convos;
+    renderConvoList(inboxConvos);
+  } else {
+    await loadInbox();
+  }
+
+  // Restore conversation tabs
+  activeConvoId = st.activeTabId;
+  renderConvoTabs();
+
+  // Restore active conversation tab content
+  if (st.activeTabId) {
+    const cached = convoCache.get(st.activeTabId);
+    if (cached) {
+      const main = document.getElementById('convo-main');
+      main.innerHTML = cached.mainHtml;
+      oldestMsgTimestamp = cached.oldestTs;
+      noMoreMessages = cached.noMore;
+      activeConvoData = cached.convoData;
+      activeFanId = cached.fanId;
+      const msgsBox = document.getElementById('msgs-box');
+      if (msgsBox) msgsBox.scrollTop = cached.scrollTop;
+      setupConvoListeners(st.activeTabId, msgsBox);
+      showFanDetailPanel(cached.convoData);
+    } else {
+      const tab = st.openTabs.find(t => t.convoId === st.activeTabId);
+      if (tab) openConvo(tab.convoId, tab.encodedName);
+    }
+  } else {
+    // Show empty state
+    document.getElementById('convo-main').innerHTML = '<div class="convo-empty"><div class="icon">💬</div><div>Select a conversation</div></div>';
+    document.getElementById('fan-detail-panel').classList.remove('visible');
+  }
+
+  renderCreatorTabs();
 }
 
 async function loadAccountsPanel() {
@@ -1680,7 +2020,9 @@ async function loadAccountsPanel() {
         <td>${a.needs_reconnect ? '<span class="badge badge-red">Needs reconnect</span>' : a.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
         <td style="color:var(--text2)">${timeAgo(a.last_synced)}</td>
         <td>
-          ${a.needs_reconnect ? `<button class="btn-sm" onclick="reconnectAccount('${a.id}')">Reconnect</button>` : ''}
+          ${a.needs_reconnect || !a.is_active
+            ? `<button class="btn-sm" onclick="reconnectAccount('${a.id}')">Reconnect</button>`
+            : `<button class="btn-sm" onclick="disconnectAccount('${a.id}')">Disconnect</button>`}
           <button class="btn-sm" onclick="syncAccount('${a.id}')">Sync</button>
         </td>
       </tr>`).join('');
@@ -1689,8 +2031,14 @@ async function loadAccountsPanel() {
   }
 }
 
-function connectAccount() {
-  showConnectModal();
+async function connectAccount() {
+  try {
+    const d = await api('/api/oauth/connect');
+    if (d.authUrl) window.location.href = d.authUrl;
+    else alert('Failed to get auth URL');
+  } catch (e) {
+    alert('Connect failed: ' + e.message);
+  }
 }
 
 async function syncAccount(id) {
@@ -1703,28 +2051,19 @@ async function syncAccount(id) {
   }
 }
 
-async function reconnectAccount(id) {
-  const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
-  window.location.href = `/api/oauth/connect?accountId=${id}${tokenParam}`;
+function reconnectAccount(id) {
+  window.location.href = `/api/oauth/connect?accountId=${id}&token=${token}`;
 }
 
-function showConnectModal() {
-  document.getElementById('connect-modal').style.display = 'flex';
-  document.getElementById('connect-label-input').value = '';
-  setTimeout(() => document.getElementById('connect-label-input').focus(), 50);
-}
-
-function hideConnectModal() {
-  document.getElementById('connect-modal').style.display = 'none';
-}
-
-function confirmConnectAccount() {
-  const label = document.getElementById('connect-label-input').value.trim();
-  if (!label) { toast('Please enter a name for this account', 'error'); return; }
-  const labelParam = `label=${encodeURIComponent(label)}`;
-  const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
-  hideConnectModal();
-  window.location.href = `/api/oauth/connect?${labelParam}${tokenParam}`;
+async function disconnectAccount(id) {
+  if (!confirm('Disconnect this account? You can reconnect it later.')) return;
+  try {
+    await api(`/api/oauth/disconnect/${id}`, { method: 'DELETE' });
+    toast('Account disconnected');
+    loadAccountsPanel();
+  } catch (e) {
+    toast('Disconnect failed: ' + e.message, 'error');
+  }
 }
 
 // ─── ANALYTICS ─────────────────────────────────────────────
@@ -2106,15 +2445,184 @@ function renderSparklines(data) {
   makeSparkline('chart-sparkline-month', monthVals, '#6366f1');
 }
 
+// ─── CONVERSATION TABS ──────────────────────────────────────
+
+function renderConvoTabs() {
+  const container = document.getElementById('convo-tabs');
+  if (!activeAcctId) { container.innerHTML = ''; return; }
+  const st = getAcctState(activeAcctId);
+  if (!st.openTabs.length) { container.innerHTML = ''; return; }
+  container.innerHTML = st.openTabs.map(tab => {
+    const isActive = tab.convoId === st.activeTabId;
+    const convo = inboxConvos.find(c => c.id === tab.convoId);
+    const isUnread = convo?.is_unread && tab.convoId !== activeConvoId;
+    return `<button class="convo-tab${isActive ? ' active' : ''}" onclick="activateConvoTab('${tab.convoId}')">
+      ${isUnread ? '<span class="convo-tab-unread"></span>' : ''}
+      <span class="convo-tab-name">${tab.name}</span>
+      <button class="convo-tab-close" onclick="event.stopPropagation();closeConvoTab('${tab.convoId}')" title="Close">×</button>
+    </button>`;
+  }).join('');
+}
+
+function addConvoTab(convoId, name, encodedName) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  // Already open? Just return
+  if (st.openTabs.find(t => t.convoId === convoId)) return;
+  // Enforce max tabs — close oldest if exceeded
+  while (st.openTabs.length >= MAX_CONVO_TABS) {
+    const oldest = st.openTabs.shift();
+    convoCache.delete(oldest.convoId);
+  }
+  st.openTabs.push({ convoId, name, encodedName });
+}
+
+function replaceActiveTab(convoId, name, encodedName) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  // No tabs yet — create the first one
+  if (!st.openTabs.length) { addConvoTab(convoId, name, encodedName); return; }
+  // Already open in a tab — caller will activate it
+  if (st.openTabs.find(t => t.convoId === convoId)) return;
+  // Replace the active tab's content
+  const activeIdx = st.openTabs.findIndex(t => t.convoId === st.activeTabId);
+  if (activeIdx === -1) { addConvoTab(convoId, name, encodedName); return; }
+  const old = st.openTabs[activeIdx];
+  convoCache.delete(old.convoId);
+  st.openTabs[activeIdx] = { convoId, name, encodedName };
+}
+
+function closeConvoTab(convoId) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  const idx = st.openTabs.findIndex(t => t.convoId === convoId);
+  if (idx === -1) return;
+  st.openTabs.splice(idx, 1);
+  convoCache.delete(convoId);
+
+  // If closing the active tab, switch to adjacent
+  if (st.activeTabId === convoId) {
+    if (livePollInterval) { clearInterval(livePollInterval); livePollInterval = null; }
+    if (st.openTabs.length > 0) {
+      const newIdx = Math.min(idx, st.openTabs.length - 1);
+      const next = st.openTabs[newIdx];
+      st.activeTabId = next.convoId;
+      activeConvoId = next.convoId;
+      renderConvoTabs();
+      openConvo(next.convoId, next.encodedName);
+    } else {
+      st.activeTabId = null;
+      activeConvoId = null;
+      document.getElementById('convo-main').innerHTML = '<div class="convo-empty"><div class="icon">💬</div><div>Select a conversation</div></div>';
+      document.getElementById('fan-detail-panel').classList.remove('visible');
+      renderConvoTabs();
+    }
+  } else {
+    renderConvoTabs();
+  }
+}
+
+function activateConvoTab(convoId) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  if (st.activeTabId === convoId) return;
+
+  // Save current conversation
+  if (activeConvoId && activeConvoId !== convoId) {
+    saveConvoToCache(activeConvoId);
+  }
+
+  st.activeTabId = convoId;
+  const tab = st.openTabs.find(t => t.convoId === convoId);
+  if (tab) {
+    openConvo(convoId, tab.encodedName);
+  }
+  renderConvoTabs();
+}
+
+function decrementUnreadIfNeeded(convoId) {
+  const st = getAcctState(activeAcctId);
+  const convo = inboxConvos.find(c => c.id === convoId);
+  if (convo?.is_unread) {
+    convo.is_unread = false;
+    st.unreadCount = Math.max(0, st.unreadCount - 1);
+    renderCreatorTabs();
+    renderConvoList(inboxConvos);
+    const totalUnread = Array.from(acctState.values()).reduce((a, s) => a + s.unreadCount, 0);
+    const badge = document.getElementById('inbox-badge');
+    if (badge) {
+      badge.style.display = totalUnread ? 'inline' : 'none';
+      badge.textContent = totalUnread;
+    }
+  }
+}
+
+function openConvoFromList(convoId, encodedName) {
+  if (!activeAcctId) return;
+  const st = getAcctState(activeAcctId);
+  const name = decodeURIComponent(encodedName);
+  // Already open in a tab? Just switch to it
+  if (st.openTabs.find(t => t.convoId === convoId)) {
+    activateConvoTab(convoId);
+    decrementUnreadIfNeeded(convoId);
+    return;
+  }
+  // Replace the active tab
+  replaceActiveTab(convoId, name, encodedName);
+  st.activeTabId = convoId;
+  decrementUnreadIfNeeded(convoId);
+  openConvo(convoId, encodedName);
+  renderConvoTabs();
+}
+
+function openConvoInNewTab(convoId, encodedName) {
+  if (!activeAcctId) return;
+  const name = decodeURIComponent(encodedName);
+  addConvoTab(convoId, name, encodedName);
+  const st = getAcctState(activeAcctId);
+  st.activeTabId = convoId;
+  decrementUnreadIfNeeded(convoId);
+  openConvo(convoId, encodedName);
+  renderConvoTabs();
+}
+
+// ─── INBOX LIST POLLING ────────────────────────────────────
+function startInboxListPolling() {
+  stopInboxListPolling();
+  inboxListPollInterval = setInterval(async () => {
+    const accountId = activeAcctId;
+    if (!accountId) return;
+    try {
+      const d = await api(`/api/conversations?accountId=${accountId}&filter=${inboxFilter}`);
+      if (activeAcctId !== accountId) return; // account switched mid-fetch
+      inboxConvos = d.conversations || [];
+      const st = getAcctState(accountId);
+      st.convos = inboxConvos;
+      st.unreadCount = inboxConvos.filter(c => c.is_unread).length;
+      renderCreatorTabs();
+      renderConvoList(inboxConvos);
+    } catch (e) { /* silent */ }
+  }, 20000);
+}
+
+function stopInboxListPolling() {
+  if (inboxListPollInterval) { clearInterval(inboxListPollInterval); inboxListPollInterval = null; }
+}
+
 // ─── INBOX ─────────────────────────────────────────────────
 async function loadInbox() {
-  const accountId = document.getElementById('inbox-acct').value;
+  const accountId = activeAcctId;
   if (!accountId) return;
   const listEl = document.getElementById('inbox-list');
   listEl.innerHTML = '<div class="loading">Loading conversations...</div>';
   try {
     const d = await api(`/api/conversations?accountId=${accountId}&filter=${inboxFilter}`);
     inboxConvos = d.conversations || [];
+    const st = getAcctState(accountId);
+    st.convos = inboxConvos;
+    st.loaded = true;
+    st.unreadCount = inboxConvos.filter(c => c.is_unread).length;
+    renderCreatorTabs();
     renderConvoList(inboxConvos);
   } catch (e) {
     listEl.innerHTML = `<div class="empty">${e.message}</div>`;
@@ -2136,7 +2644,7 @@ function renderConvoList(convos) {
     const fan = c.fan || {};
     const name = fan.display_name || fan.username || 'Unknown fan';
     const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    return `<div class="conv-item${c.is_unread?' unread':''}${c.id===activeConvoId?' active':''}" onclick="openConvo('${c.id}','${encodeName(name)}')">
+    return `<div class="conv-item${c.is_unread?' unread':''}${c.id===activeConvoId?' active':''}" onclick="openConvoFromList('${c.id}','${encodeName(name)}')">
       <div class="conv-avatar">${fan.avatar_url ? `<img src="${fan.avatar_url}" onerror="this.parentElement.textContent='${initials}'">` : initials}</div>
       <div class="conv-info">
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2146,38 +2654,169 @@ function renderConvoList(convos) {
         <div class="conv-preview">${c.last_message_preview || '—'}</div>
       </div>
       ${c.is_unread ? '<div class="unread-dot"></div>' : ''}
+      <button class="conv-newtab-btn" onclick="event.stopPropagation();openConvoInNewTab('${c.id}','${encodeName(name)}')" title="Open in new tab">+</button>
     </div>`;
   }).join('');
 }
 
 function encodeName(name) { return encodeURIComponent(name); }
-function filterConvos() { renderConvoList(inboxConvos); }
+function filterConvos() {
+  if (activeAcctId) {
+    getAcctState(activeAcctId).searchText = document.getElementById('inbox-search')?.value || '';
+  }
+  renderConvoList(inboxConvos);
+}
 
 function setFilter(btn, filter) {
   inboxFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (activeAcctId) getAcctState(activeAcctId).convoFilter = filter;
+  document.querySelectorAll('#inbox-filters .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   loadInbox();
 }
 
+function renderMsgHtml(m) {
+  const out = m.direction === 'outbound';
+  const chatter = out && m.sent_by_user?.name ? `<span class="msg-chatter">${escHtml(m.sent_by_user.name)}</span>` : '';
+  const statusNote = out && m.platform_status === 'pending' ? `<span class="msg-status sending">Pending</span>` : '';
+  return `<div class="msg ${out?'outbound':'inbound'}" data-sent-at="${m.sent_at || ''}" data-msg-id="${m.id || ''}">
+    <div class="msg-bubble">${escHtml(m.content || '[Media]')}</div>
+    <div class="msg-meta">
+      ${chatter}
+      <span class="msg-time">${shortTime(m.sent_at)}</span>
+      ${statusNote}
+    </div>
+  </div>`;
+}
+
+function saveConvoToCache(id) {
+  const msgsBox = document.getElementById('msgs-box');
+  if (!msgsBox) return;
+  convoCache.set(id, {
+    mainHtml: document.getElementById('convo-main').innerHTML,
+    scrollTop: msgsBox.scrollTop,
+    oldestTs: oldestMsgTimestamp,
+    noMore: noMoreMessages,
+    convoData: activeConvoData,
+    fanId: activeFanId
+  });
+}
+
+function setupConvoListeners(id, msgsBox) {
+  // Scroll-up pagination listener
+  msgsBox.addEventListener('scroll', async function() {
+    if (msgsBox.scrollTop < 100 && !loadingOlder && !noMoreMessages && oldestMsgTimestamp && activeConvoId === id) {
+      loadingOlder = true;
+      const loader = document.createElement('div');
+      loader.className = 'loading';
+      loader.textContent = 'Loading older...';
+      msgsBox.prepend(loader);
+      try {
+        const older = await api(`/api/conversations/${id}?limit=20&before=${encodeURIComponent(oldestMsgTimestamp)}`);
+        loader.remove();
+        const olderMsgs = older.messages || [];
+        if (olderMsgs.length > 0) {
+          const prevHeight = msgsBox.scrollHeight;
+          msgsBox.insertAdjacentHTML('afterbegin', olderMsgs.map(renderMsgHtml).join(''));
+          msgsBox.scrollTop = msgsBox.scrollHeight - prevHeight;
+          oldestMsgTimestamp = olderMsgs[0]?.sent_at || oldestMsgTimestamp;
+        }
+        noMoreMessages = !older.has_more;
+      } catch (err) {
+        loader.remove();
+        console.error('Scroll pagination error:', err);
+      }
+      loadingOlder = false;
+    }
+  });
+
+  // Start live polling for new incoming messages
+  livePollInterval = setInterval(async () => {
+    if (activeConvoId !== id) { clearInterval(livePollInterval); livePollInterval = null; return; }
+    try {
+      const poll = await api(`/api/conversations/${id}?limit=5`);
+      const newMsgs = poll.messages || [];
+      if (!newMsgs.length) return;
+      const displayed = msgsBox.querySelectorAll('.msg[data-msg-id]');
+      const displayedIds = new Set();
+      displayed.forEach(el => { const mid = el.getAttribute('data-msg-id'); if (mid) displayedIds.add(mid); });
+      const truly = newMsgs.filter(m => m.id && !displayedIds.has(m.id));
+      if (truly.length > 0) {
+        const wasAtBottom = msgsBox.scrollHeight - msgsBox.scrollTop - msgsBox.clientHeight < 50;
+        for (const m of truly) {
+          if (m.direction === 'outbound') {
+            const optimistic = msgsBox.querySelector('.msg.outbound[data-temp-id]');
+            if (optimistic) {
+              optimistic.outerHTML = renderMsgHtml(m);
+              continue;
+            }
+          }
+          msgsBox.insertAdjacentHTML('beforeend', renderMsgHtml(m));
+        }
+        if (wasAtBottom) msgsBox.scrollTop = msgsBox.scrollHeight;
+      }
+    } catch (err) { /* silent */ }
+  }, 7000);
+}
+
 async function openConvo(id, encodedName) {
-  activeConvoId = id;
+  // Ensure tab exists
   const name = decodeURIComponent(encodedName);
+  addConvoTab(id, name, encodedName);
+  if (activeAcctId) getAcctState(activeAcctId).activeTabId = id;
+
+  // Save current conversation to cache before switching
+  if (activeConvoId && activeConvoId !== id) {
+    saveConvoToCache(activeConvoId);
+  }
+
+  // Clear previous live poll
+  if (livePollInterval) { clearInterval(livePollInterval); livePollInterval = null; }
+
+  activeConvoId = id;
+  loadingOlder = false;
+
   const main = document.getElementById('convo-main');
+
+  // Update active state in sidebar
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.conv-item').forEach(el => {
+    if (el.getAttribute('onclick')?.includes(id)) el.classList.add('active');
+  });
+
+  // Restore from cache if available
+  const cached = convoCache.get(id);
+  if (cached) {
+    main.innerHTML = cached.mainHtml;
+    oldestMsgTimestamp = cached.oldestTs;
+    noMoreMessages = cached.noMore;
+    activeConvoData = cached.convoData;
+    activeFanId = cached.fanId;
+    const msgsBox = document.getElementById('msgs-box');
+    if (msgsBox) msgsBox.scrollTop = cached.scrollTop;
+    setupConvoListeners(id, msgsBox);
+    showFanDetailPanel(cached.convoData);
+    renderConvoTabs();
+    return;
+  }
+
+  // Fresh load
+  oldestMsgTimestamp = null;
+  noMoreMessages = false;
+
   main.innerHTML = `
     <div class="convo-topbar">
       <div><div class="convo-fan-name">${name}</div><div class="convo-fan-meta">Loading...</div></div>
       <button class="btn-sm" onclick="openConvo('${id}','${encodedName}')">↻</button>
     </div>
     <div class="convo-msgs" id="msgs-box"><div class="loading">Loading messages...</div></div>
+    <div id="template-preview" class="template-preview" style="display:none"></div>
     <div class="convo-input-wrap">
+      <button class="btn-scripts" onclick="openScriptsModal()" title="Templates">📋</button>
       <textarea class="convo-input" id="reply-input" placeholder="Type a message..." rows="2" onkeydown="handleMsgKey(event,'${id}')"></textarea>
+      <button class="btn-clear" id="btn-clear-template" onclick="clearCompose()" title="Clear template" style="display:none">✕</button>
       <button class="btn-send" onclick="sendMsg('${id}')">Send</button>
     </div>`;
-  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.conv-item').forEach(el => {
-    if (el.getAttribute('onclick')?.includes(id)) el.classList.add('active');
-  });
   try {
     const d = await api(`/api/conversations/${id}`);
     activeConvoData = d;
@@ -2190,20 +2829,21 @@ async function openConvo(id, encodedName) {
     if (!msgs.length) {
       box.innerHTML = '<div class="empty">No messages yet</div>';
     } else {
-      box.innerHTML = msgs.map(m => {
-        const out = m.direction === 'outbound';
-        return `<div class="msg ${out?'outbound':'inbound'}">
-          <div class="msg-bubble">${escHtml(m.content || '[Media]')}</div>
-          <div class="msg-time">${shortTime(m.sent_at)}</div>
-        </div>`;
-      }).join('');
+      box.innerHTML = msgs.map(renderMsgHtml).join('');
+      oldestMsgTimestamp = msgs[0]?.sent_at || null;
+      noMoreMessages = !d.has_more;
+      msgQueue.forEach(item => {
+        if (item.convoId === id) appendOptimisticMsg(item.tempId, item.content);
+      });
       box.scrollTop = box.scrollHeight;
     }
-    // Show fan detail panel with DB data first, then fetch live insights
+
+    setupConvoListeners(id, document.getElementById('msgs-box'));
     showFanDetailPanel(d);
   } catch (e) {
     main.querySelector('#msgs-box').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
   }
+  renderConvoTabs();
 }
 
 // ─── FAN DETAIL PANEL ─────────────────────────────────────
@@ -2407,18 +3047,98 @@ function generateChatSummary() {
   resultEl.style.display = 'block';
 }
 
-async function sendMsg(convoId) {
+function sendMsg(convoId) {
   const input = document.getElementById('reply-input');
   const content = input.value.trim();
-  if (!content) return;
+  if (!content && !selectedTemplateUuid) return;
   input.value = '';
-  try {
-    await api(`/api/conversations/${convoId}/messages`, { method: 'POST', body: { content } });
-    openConvo(convoId, encodeURIComponent(document.querySelector('.convo-fan-name')?.textContent || ''));
-    toast('Sent', 'success');
-  } catch (e) {
-    toast('Send failed: ' + e.message, 'error');
-    input.value = content;
+  const tempId = 'temp-' + tempIdCounter++;
+  const displayText = content || (selectedTemplateUuid ? '[Template]' : '');
+  appendOptimisticMsg(tempId, displayText);
+  const queueItem = { tempId, convoId, content, status: 'queued' };
+  if (selectedTemplateUuid) {
+    queueItem.mediaUuids = selectedMediaUuids;
+    const priceInput = document.getElementById('tmpl-price');
+    if (priceInput) selectedTemplatePrice = Math.round(Math.max(0, parseFloat(priceInput.value || 0)) * 100);
+    if (selectedTemplatePrice > 0) {
+      // Priced message: send as raw PPV with media — Fanvue ignores price/mediaUuids when templateUuid is present
+      queueItem.ppvPrice = selectedTemplatePrice;
+    } else {
+      // Free template: send with templateUuid so Fanvue uses the template as-is
+      queueItem.templateUuid = selectedTemplateUuid;
+    }
+  }
+  msgQueue.push(queueItem);
+  clearCompose();
+  processQueue();
+}
+
+async function processQueue() {
+  if (queueProcessing) return;
+  queueProcessing = true;
+  while (msgQueue.length > 0) {
+    const item = msgQueue.shift();
+    item.status = 'sending';
+    updateMsgStatus(item.tempId, 'sending');
+    try {
+      const body = { content: item.content };
+      if (item.templateUuid) body.templateUuid = item.templateUuid;
+      if (item.mediaUuids && item.mediaUuids.length) body.mediaUuids = item.mediaUuids;
+      if (item.ppvPrice) { body.isPpv = true; body.ppvPrice = item.ppvPrice; }
+      await api(`/api/conversations/${item.convoId}/messages`, { method: 'POST', body });
+      updateMsgStatus(item.tempId, 'sent');
+      // Update conversation preview in sidebar
+      const convo = inboxConvos.find(c => c.id === item.convoId);
+      if (convo) {
+        convo.last_message_preview = (item.content || (item.templateUuid ? '[Template]' : '')).substring(0, 100);
+        convo.last_message_at = new Date().toISOString();
+        convo.last_message_from = 'model';
+        renderConvoList(inboxConvos);
+      }
+    } catch (e) {
+      updateMsgStatus(item.tempId, 'failed', item.content, item.convoId);
+    }
+  }
+  queueProcessing = false;
+}
+
+function appendOptimisticMsg(tempId, content) {
+  const box = document.getElementById('msgs-box');
+  const empty = box.querySelector('.empty');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'msg outbound';
+  div.setAttribute('data-temp-id', tempId);
+  const chatterName = currentUser?.name || '';
+  div.innerHTML = `<div class="msg-bubble">${escHtml(content)}</div>
+    <div class="msg-meta">
+      ${chatterName ? `<span class="msg-chatter">${escHtml(chatterName)}</span>` : ''}
+      <span class="msg-status sending">Sending...</span>
+    </div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function updateMsgStatus(tempId, status, content, convoId) {
+  const el = document.querySelector(`[data-temp-id="${tempId}"]`);
+  if (!el) return;
+  const statusEl = el.querySelector('.msg-status');
+  if (!statusEl) return;
+  statusEl.className = 'msg-status ' + status;
+  if (status === 'sending') {
+    statusEl.textContent = 'Sending...';
+  } else if (status === 'sent') {
+    statusEl.textContent = 'Sent';
+    setTimeout(() => { statusEl.style.opacity = '0'; }, 2000);
+  } else if (status === 'failed') {
+    statusEl.innerHTML = 'Failed · <span class="msg-retry">Retry</span>';
+    statusEl.querySelector('.msg-retry').onclick = () => {
+      statusEl.className = 'msg-status sending';
+      statusEl.textContent = 'Sending...';
+      statusEl.style.opacity = '1';
+      msgQueue.push({ tempId, convoId, content, status: 'queued' });
+      processQueue();
+    };
   }
 }
 
@@ -2427,7 +3147,208 @@ function handleMsgKey(e, id) {
 }
 
 function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(s) { return escHtml(String(s || '')); }
+
+// ─── FANVUE TEMPLATES (Scripts Modal) ─────────────────────
+
+async function openScriptsModal() {
+  if (!activeAcctId) { toast('Select an account first', 'error'); return; }
+  // Create modal
+  const overlay = document.createElement('div');
+  overlay.className = 'scripts-modal';
+  overlay.id = 'scripts-modal';
+  overlay.onclick = (e) => { if (e.target === overlay) closeScriptsModal(); };
+  overlay.innerHTML = `
+    <div class="scripts-modal-inner">
+      <div class="scripts-modal-header">
+        <h3>Templates</h3>
+        <button class="scripts-modal-close" onclick="closeScriptsModal()">✕</button>
+      </div>
+      <div class="scripts-modal-folders" id="tmpl-folders" style="display:none"></div>
+      <div class="scripts-modal-body" id="tmpl-list">
+        <div class="loading">Loading templates...</div>
+      </div>
+      <div class="scripts-modal-footer" id="tmpl-footer" style="display:none">
+        <button class="btn-load-more" onclick="loadMoreTemplates()">Load more</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.addEventListener('keydown', scriptsModalEscHandler);
+  templatesCache = { data: [], folders: [], hasMore: false, page: 0, activeFolder: null };
+  await loadMoreTemplates();
+}
+
+function scriptsModalEscHandler(e) {
+  if (e.key === 'Escape') closeScriptsModal();
+}
+
+function closeScriptsModal() {
+  const m = document.getElementById('scripts-modal');
+  if (m) m.remove();
+  document.removeEventListener('keydown', scriptsModalEscHandler);
+}
+
+async function loadMoreTemplates() {
+  const tc = templatesCache;
+  tc.page++;
+  try {
+    let url = `/api/templates?accountId=${activeAcctId}&page=${tc.page}&size=50`;
+    if (tc.activeFolder) url += `&folderName=${encodeURIComponent(tc.activeFolder)}`;
+    const resp = await api(url);
+    const items = resp.data || resp || [];
+    // Merge media from cache or store new media into cache
+    items.forEach(t => {
+      const uid = t.uuid || t.id;
+      if (t.media?.length > 0) {
+        templateMediaCache.set(uid, t.media);
+      } else if (templateMediaCache.has(uid)) {
+        t.media = templateMediaCache.get(uid);
+      }
+    });
+    tc.data = tc.data.concat(items);
+    tc.hasMore = resp.pagination ? (tc.page < resp.pagination.totalPages) : items.length === 50;
+    // Collect folders
+    items.forEach(t => { if (t.folderName && !tc.folders.includes(t.folderName)) tc.folders.push(t.folderName); });
+    renderTemplatesList();
+    renderTemplateFolders();
+  } catch (e) {
+    document.getElementById('tmpl-list').innerHTML = `<div class="empty">Error loading templates: ${e.message}</div>`;
+  }
+}
+
+function renderTemplateFolders() {
+  const el = document.getElementById('tmpl-folders');
+  const tc = templatesCache;
+  if (tc.folders.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const folders = ['All', ...tc.folders];
+  el.innerHTML = folders.map(f => {
+    const isActive = (f === 'All' && !tc.activeFolder) || f === tc.activeFolder;
+    return `<button class="folder-btn ${isActive ? 'active' : ''}" onclick="filterTemplateFolder('${f === 'All' ? '' : escHtml(f)}')">${escHtml(f)}</button>`;
+  }).join('');
+}
+
+async function filterTemplateFolder(folder) {
+  templatesCache.data = [];
+  templatesCache.page = 0;
+  templatesCache.activeFolder = folder || null;
+  document.getElementById('tmpl-list').innerHTML = '<div class="loading">Loading...</div>';
+  await loadMoreTemplates();
+}
+
+function renderTemplatesList() {
+  const tc = templatesCache;
+  const list = document.getElementById('tmpl-list');
+  if (!tc.data.length) {
+    list.innerHTML = '<div class="empty">No templates found</div>';
+    document.getElementById('tmpl-footer').style.display = 'none';
+    return;
+  }
+  list.innerHTML = tc.data.map(t => {
+    const uid = t.uuid || t.id;
+    const text = (t.text || '').substring(0, 120) + ((t.text || '').length > 120 ? '...' : '');
+    const price = t.price ? t.price : 0;
+    const priceFmt = price > 0 ? `$${(price / 100).toFixed(2)}` : 'Free';
+    const priceClass = price > 0 ? 'paid' : 'free';
+    const mediaCount = (t.mediaUuids || []).length;
+    let mediaPart = '';
+    if (t.media && t.media.length > 0) {
+      const thumbs = t.media.slice(0, 4).map(m =>
+        `<img class="template-card-thumb" src="${escAttr(m.url || m.thumbnailUrl || '')}" alt="" onerror="this.style.display='none'">`
+      ).join('');
+      const overflow = t.media.length > 4 ? `<span class="template-card-media-badge">+${t.media.length - 4}</span>` : '';
+      mediaPart = thumbs + overflow;
+    } else if (mediaCount > 0) {
+      mediaPart = `<span class="template-card-media-badge">📎 ${mediaCount} attachment${mediaCount > 1 ? 's' : ''}</span>`;
+    }
+    return `<div class="template-card" onclick="selectTemplate('${uid}')">
+      <div class="template-card-text">${escHtml(text) || '<em style="color:var(--text3)">[Media only]</em>'}</div>
+      <div class="template-card-footer">
+        <div class="template-card-thumbs">${mediaPart}</div>
+        <span class="template-price-badge ${priceClass}">${priceFmt}</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('tmpl-footer').style.display = tc.hasMore ? '' : 'none';
+}
+
+function selectTemplate(uuid) {
+  const t = templatesCache.data.find(d => (d.uuid || d.id) === uuid);
+  if (!t) return;
+  closeScriptsModal();
+  // Populate compose
+  const input = document.getElementById('reply-input');
+  if (input) input.value = t.text || '';
+  selectedTemplateUuid = t.uuid || t.id;
+  selectedTemplatePrice = t.price || 0;
+  selectedMediaUuids = t.mediaUuids || [];
+  // Show preview strip
+  renderTemplatePreview(t);
+  // Show clear button
+  const clearBtn = document.getElementById('btn-clear-template');
+  if (clearBtn) clearBtn.style.display = '';
+  if (input) input.focus();
+}
+
+function renderTemplatePreview(template) {
+  const el = document.getElementById('template-preview');
+  if (!el) return;
+  const mediaCount = (template.mediaUuids || []).length;
+  const media = template.media || [];
+  let thumbsHtml = '';
+  if (media.length > 0) {
+    thumbsHtml = media.slice(0, 6).map(m => {
+      const src = escAttr(m.url || m.thumbnailUrl || '');
+      return `<img class="tmpl-thumb" src="${src}" alt="" onclick="openLightbox('${src}')" onerror="this.style.display='none'">`;
+    }).join('');
+  } else if (mediaCount > 0) {
+    thumbsHtml = `<span style="font-size:12px;color:var(--text3)">📎 ${mediaCount} attachment${mediaCount > 1 ? 's' : ''}</span>`;
+  } else {
+    thumbsHtml = `<span style="font-size:12px;color:var(--text3)">No attachments</span>`;
+  }
+  const priceVal = ((selectedTemplatePrice || 0) / 100).toFixed(2);
+  el.innerHTML = `
+    <div class="tmpl-thumbs">${thumbsHtml}</div>
+    <div class="tmpl-price-wrap">
+      <span style="font-size:12px;color:var(--text3)">$</span>
+      <input type="number" class="tmpl-price-input" id="tmpl-price" value="${priceVal}" min="0" step="0.01"
+        onchange="selectedTemplatePrice = Math.round(Math.max(0, parseFloat(this.value || 0)) * 100)">
+    </div>`;
+  el.style.display = 'flex';
+}
+
+function clearCompose() {
+  const input = document.getElementById('reply-input');
+  if (input) input.value = '';
+  selectedTemplateUuid = null;
+  selectedTemplatePrice = null;
+  selectedMediaUuids = [];
+  const preview = document.getElementById('template-preview');
+  if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+  const clearBtn = document.getElementById('btn-clear-template');
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+
+function openLightbox(src) {
+  if (!src) return;
+  const existing = document.getElementById('lightbox');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox';
+  overlay.id = 'lightbox';
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', escHandler); };
+  overlay.onclick = close;
+  const isVideo = /\.(mp4|webm|mov)/i.test(src);
+  if (isVideo) {
+    overlay.innerHTML = `<video src="${escAttr(src)}" controls autoplay></video>`;
+  } else {
+    overlay.innerHTML = `<img src="${escAttr(src)}" alt="Preview">`;
+  }
+  document.body.appendChild(overlay);
+  const escHandler = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', escHandler);
 }
 
 // ─── SCRIPTS ───────────────────────────────────────────────

@@ -18,28 +18,41 @@ router.get('/', authenticate, async (req, res, next) => {
     const orgId = req.user.organization_id;
     
     // Parallel DB queries
-    const [accountsResult, teamResult, orgResult] = await Promise.all([
+    const [accountsResult, teamResult, orgResult, unreadResult] = await Promise.all([
       supabase
         .from('connected_accounts')
         .select('id, label, fanvue_username, fanvue_display_name, avatar_url, is_active, needs_reconnect, last_synced')
         .eq('organization_id', orgId)
         .order('created_at', { ascending: false }),
-      
+
       supabase
         .from('users')
         .select('id, name, email, role')
         .eq('organization_id', orgId),
-      
+
       supabase
         .from('organizations')
         .select('id, name, plan')
         .eq('id', orgId)
-        .single()
+        .single(),
+
+      supabase
+        .from('conversations')
+        .select('account_id')
+        .eq('organization_id', orgId)
+        .eq('is_unread', true)
     ]);
-    
+
     const accounts = accountsResult.data || [];
     const team = teamResult.data || [];
     const org = orgResult.data;
+
+    // Build unread count map per account
+    const unreadMap = new Map();
+    for (const row of (unreadResult.data || [])) {
+      unreadMap.set(row.account_id, (unreadMap.get(row.account_id) || 0) + 1);
+    }
+    accounts.forEach(a => { a.unread_count = unreadMap.get(a.id) || 0; });
     
     // Fetch live stats for active accounts (cap at 10 for speed)
     const activeAccounts = await supabase

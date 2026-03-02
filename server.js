@@ -14,6 +14,7 @@ const fansRoutes = require('./routes/fans');
 const conversationsRoutes = require('./routes/conversations');
 const snippetsRoutes = require('./routes/snippets');
 const scriptsRoutes = require('./routes/scripts');
+const templatesRoutes = require('./routes/templates');
 const revenueRoutes = require('./routes/revenue');
 const webhooksRoutes = require('./routes/webhooks');
 const settingsRoutes = require('./routes/settings');
@@ -26,7 +27,7 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: '*', credentials: false }));
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
 app.use('/api/', limiter);
 
 app.use(morgan('dev'));
@@ -47,6 +48,7 @@ app.use('/api/fans', fansRoutes);
 app.use('/api/conversations', conversationsRoutes);
 app.use('/api/snippets', snippetsRoutes);
 app.use('/api/scripts', scriptsRoutes);
+app.use('/api/templates', templatesRoutes);
 app.use('/api/revenue', revenueRoutes);
 app.use('/api/settings', settingsRoutes);
 
